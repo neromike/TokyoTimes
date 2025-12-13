@@ -1,0 +1,8 @@
+{
+  "run": {
+    "room": "room_001"
+  },
+  "knowledge": {
+    "seen_intro": true
+  }
+}

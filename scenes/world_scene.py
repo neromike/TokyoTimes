@@ -12,7 +12,8 @@ class WorldScene:
         self.font = pygame.font.Font(None, 24)
 
     def handle_event(self, event: pygame.event.Event) -> None:
-        pass
+        if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+            self.game.stack.pop()
 
     def update(self, dt: float) -> None:
         self.world.update(dt)
