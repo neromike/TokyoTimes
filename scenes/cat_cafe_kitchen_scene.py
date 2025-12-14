@@ -16,6 +16,7 @@ PORTAL_MAP = {
 class CatCafeKitchenScene(MaskedScene):
     BACKGROUND_PATH = "backgrounds/cat_cafe_kitchen.jpg"
     PORTAL_MAP = PORTAL_MAP
+    PLAYER_SPRITE_SCALE = 0.6
     
     def draw(self, surface: pygame.Surface) -> None:
         super().draw(surface)

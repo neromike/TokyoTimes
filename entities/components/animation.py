@@ -33,7 +33,7 @@ class Spritesheet:
 
 class Animation:
     """Handles sprite animation playback."""
-    def __init__(self, spritesheet: Spritesheet, fps: int = 10):
+    def __init__(self, spritesheet: Spritesheet, fps: int = 10, scale: float = 1.0):
         self.spritesheet = spritesheet
         self.fps = fps
         self.frame_time = 1.0 / fps
@@ -41,6 +41,8 @@ class Animation:
         self.elapsed = 0.0
         self.frame_indices = None  # Optional: specific frame sequence
         self.mirrored = False  # Optional: flip horizontally
+        self.scale = scale  # Scale factor for frames
+        self.scaled_frame_cache = {}  # Cache scaled frames
 
     def update(self, dt: float) -> None:
         """Update animation frame."""
@@ -56,4 +58,27 @@ class Animation:
             idx = self.frame_indices[self.current_frame]
         else:
             idx = self.current_frame
-        return self.spritesheet.get_frame(idx) if self.spritesheet.frames else None
+        
+        frame = self.spritesheet.get_frame(idx) if self.spritesheet.frames else None
+        
+        if frame is None:
+            return None
+        
+        # Apply scaling if needed
+        if self.scale and self.scale != 1.0:
+            cache_key = (id(frame), self.scale, self.mirrored)
+            if cache_key not in self.scaled_frame_cache:
+                new_width = int(frame.get_width() * self.scale)
+                new_height = int(frame.get_height() * self.scale)
+                scaled = pygame.transform.scale(frame, (new_width, new_height))
+                if self.mirrored:
+                    scaled = pygame.transform.flip(scaled, True, False)
+                self.scaled_frame_cache[cache_key] = scaled
+            return self.scaled_frame_cache[cache_key]
+        elif self.mirrored:
+            cache_key = (id(frame), self.mirrored)
+            if cache_key not in self.scaled_frame_cache:
+                self.scaled_frame_cache[cache_key] = pygame.transform.flip(frame, True, False)
+            return self.scaled_frame_cache[cache_key]
+        
+        return frame
