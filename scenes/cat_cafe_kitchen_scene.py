@@ -59,10 +59,16 @@ class CatCafeKitchenScene:
         else:
             surface.fill((60, 60, 60))
 
-        # Draw collision rects (debug)
-        for rect in self.collision_rects:
-            screen_x, screen_y = self.camera.apply(rect.x, rect.y)
-            pygame.draw.rect(surface, (255, 0, 0), (screen_x, screen_y, rect.width, rect.height), 2)
+        # Draw collision shapes (rects + polygons) for debugging
+        for shape in self.collision_rects:
+            if isinstance(shape, pygame.Rect):
+                screen_x, screen_y = self.camera.apply(shape.x, shape.y)
+                pygame.draw.rect(surface, (255, 0, 0), (screen_x, screen_y, shape.width, shape.height), 2)
+            elif isinstance(shape, dict) and 'polygon' in shape:
+                pts = shape['polygon']
+                screen_pts = [self.camera.apply(px, py) for (px, py) in pts]
+                if len(screen_pts) >= 2:
+                    pygame.draw.lines(surface, (255, 0, 0), True, screen_pts, 2)
 
         # Draw portal trigger zone for debugging
         for portal in getattr(self, "portals", []):

@@ -22,11 +22,20 @@ def get_collision_rects(world_width: int, world_height: int):
 
 
 def get_portals(world_width: int, world_height: int):
-    """Build portal definitions for the kitchen scene."""
+    """Build portal definitions for the kitchen scene using coordinates."""
     spawn_x = world_width - PORTAL_TO_CAFE_SPAWN_OFFSET_FROM_RIGHT
+    # Define by coordinates: top-left and bottom-right
+    top_left = (0, DOORWAY_TOP)
+    bottom_right = (WALL_THICKNESS, DOORWAY_TOP + DOORWAY_HEIGHT)
+    rect = pygame.Rect(
+        top_left[0],
+        top_left[1],
+        bottom_right[0] - top_left[0],
+        bottom_right[1] - top_left[1],
+    )
     return [
         {
-            "rect": pygame.Rect(0, DOORWAY_TOP, WALL_THICKNESS, DOORWAY_HEIGHT),
+            "rect": rect,
             "to_scene": "cat_cafe",
             "spawn": (spawn_x, PORTAL_TO_CAFE_SPAWN_Y),
         }

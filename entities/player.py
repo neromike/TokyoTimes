@@ -89,8 +89,81 @@ class Player(Character):
         new_x = self.x + self.velocity_x * dt
         new_y = self.y + self.velocity_y * dt
         
-        # Check collision if we have collision data
-        if self.collision_rects:
+        # Check collision - mask-based or rect-based
+        if hasattr(self, 'mask_system') and self.mask_system:
+            # Mask-based collision with proper diagonal sliding
+            old_rect = self.collision_rect.copy()
+            old_rect.centerx = int(old_x) + PLAYER_HITBOX_OFFSET_CENTERX
+            old_rect.bottom = int(old_y) + PLAYER_HITBOX_OFFSET_BOTTOM
+
+            new_rect = self.collision_rect.copy()
+            new_rect.centerx = int(new_x) + PLAYER_HITBOX_OFFSET_CENTERX
+            new_rect.bottom = int(new_y) + PLAYER_HITBOX_OFFSET_BOTTOM
+            
+            # Check if new position collides
+            if not self.mask_system.rect_collides(new_rect):
+                # No collision - allow full movement
+                pass
+            else:
+                # Collision detected - try sliding along the wall
+                slide_distance = 10  # pixels to search for valid slide
+                found_slide = False
+                
+                # Determine primary movement direction
+                dx = abs(new_x - old_x)
+                dy = abs(new_y - old_y)
+                
+                if dx > dy:
+                    # Primarily horizontal movement - try sliding vertically
+                    for y_offset in range(-slide_distance, slide_distance + 1):
+                        test_y = new_y + y_offset
+                        test_rect = self.collision_rect.copy()
+                        test_rect.centerx = int(new_x) + PLAYER_HITBOX_OFFSET_CENTERX
+                        test_rect.bottom = int(test_y) + PLAYER_HITBOX_OFFSET_BOTTOM
+                        
+                        if not self.mask_system.rect_collides(test_rect):
+                            new_y = test_y
+                            found_slide = True
+                            break
+                else:
+                    # Primarily vertical movement - try sliding horizontally
+                    for x_offset in range(-slide_distance, slide_distance + 1):
+                        test_x = new_x + x_offset
+                        test_rect = self.collision_rect.copy()
+                        test_rect.centerx = int(test_x) + PLAYER_HITBOX_OFFSET_CENTERX
+                        test_rect.bottom = int(new_y) + PLAYER_HITBOX_OFFSET_BOTTOM
+                        
+                        if not self.mask_system.rect_collides(test_rect):
+                            new_x = test_x
+                            found_slide = True
+                            break
+                
+                if not found_slide:
+                    # Can't slide - try simple axis-aligned movement
+                    test_rect_x = self.collision_rect.copy()
+                    test_rect_x.centerx = int(new_x) + PLAYER_HITBOX_OFFSET_CENTERX
+                    test_rect_x.bottom = int(old_y) + PLAYER_HITBOX_OFFSET_BOTTOM
+                    
+                    test_rect_y = self.collision_rect.copy()
+                    test_rect_y.centerx = int(old_x) + PLAYER_HITBOX_OFFSET_CENTERX
+                    test_rect_y.bottom = int(new_y) + PLAYER_HITBOX_OFFSET_BOTTOM
+                    
+                    if not self.mask_system.rect_collides(test_rect_x):
+                        new_y = old_y
+                    elif not self.mask_system.rect_collides(test_rect_y):
+                        new_x = old_x
+                    else:
+                        new_x, new_y = old_x, old_y
+            
+            # Update collision rect to resolved position
+            self.collision_rect.centerx = int(new_x) + PLAYER_HITBOX_OFFSET_CENTERX
+            self.collision_rect.bottom = int(new_y) + PLAYER_HITBOX_OFFSET_BOTTOM
+            
+            self.velocity_x = (new_x - old_x) / dt if dt > 0 else 0
+            self.velocity_y = (new_y - old_y) / dt if dt > 0 else 0
+            
+        elif self.collision_rects:
+            # Rect-based collision
             from world.collisions import Collisions
             # Build old and new collision rects based on sprite movement
             old_rect = self.collision_rect.copy()
@@ -114,6 +187,10 @@ class Player(Character):
 
             self.velocity_x = (valid_x - old_x) / dt if dt > 0 else 0
             self.velocity_y = (valid_y - old_y) / dt if dt > 0 else 0
+            
+            # Update the live collision rect to the resolved coordinates for debug drawing
+            self.collision_rect.x = valid_rx
+            self.collision_rect.y = valid_ry
         
         super().update(dt)
         if self.animation and self.spritesheet:
@@ -131,9 +208,6 @@ class Player(Character):
                 new_width = int(self.sprite.get_width() * PLAYER_SPRITE_SCALE)
                 new_height = int(self.sprite.get_height() * PLAYER_SPRITE_SCALE)
                 self.sprite = pygame.transform.scale(self.sprite, (new_width, new_height))
-                # Update the live collision rect to the resolved coordinates for debug drawing
-                self.collision_rect.x = valid_rx
-                self.collision_rect.y = valid_ry
 
     def draw(self, surface: pygame.Surface) -> None:
         if self.sprite:
