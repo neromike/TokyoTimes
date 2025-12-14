@@ -23,6 +23,7 @@ class CatCafeScene(MaskedScene):
     BACKGROUND_PATH = "backgrounds/cat_cafe.jpg"
     PORTAL_MAP = PORTAL_MAP
     PLAYER_SPRITE_SCALE = 0.5
+    SCENE_NAME = "cat_cafe"
     
     # Prop positions - configure here
     ARCADE_CABINET_POS = (600, 350)
@@ -35,11 +36,32 @@ class CatCafeScene(MaskedScene):
         
         super().__init__(game, spawn)
         
-        # Add props to the scene
+        # Add props to the scene, but skip items that have been picked up
         self.arcade_cabinet = make_prop("arcade_spaceship", self.ARCADE_CABINET_POS[0], self.ARCADE_CABINET_POS[1], game)
         self.arcade_cabinet_blocks = make_prop("arcade_blocks", self.ARCADE_BLOCKS_POS[0], self.ARCADE_BLOCKS_POS[1], game)
-        self.cat_food_dish = make_prop("cat_food_dish", self.CAT_FOOD_DISH_POS[0], self.CAT_FOOD_DISH_POS[1], game, scale=2.0)
-        self.props = [self.arcade_cabinet, self.arcade_cabinet_blocks, self.cat_food_dish]
+        
+        # Create cat_food_dish, but check if it was already picked up globally
+        cat_food_dish_id = f"cat_food_dish:{int(self.CAT_FOOD_DISH_POS[0])}:{int(self.CAT_FOOD_DISH_POS[1])}"
+        if cat_food_dish_id not in game.picked_up_items:
+            self.cat_food_dish = make_prop("cat_food_dish", self.CAT_FOOD_DISH_POS[0], self.CAT_FOOD_DISH_POS[1], game, scale=2.0)
+            self.props = [self.arcade_cabinet, self.arcade_cabinet_blocks, self.cat_food_dish]
+        else:
+            # Item was picked up, don't spawn it
+            self.props = [self.arcade_cabinet, self.arcade_cabinet_blocks]
+        
+        # Spawn any items that were dropped in this scene
+        if self.SCENE_NAME in game.dropped_items:
+            for dropped_item in game.dropped_items[self.SCENE_NAME]:
+                dropped_prop = make_prop(
+                    dropped_item['name'],
+                    dropped_item['x'],
+                    dropped_item['y'],
+                    game,
+                    variant_index=dropped_item.get('variant_index', 0),
+                    scale=dropped_item.get('scale', None)
+                )
+                self.props.append(dropped_prop)
+        
         # Update player's prop reference
         self.player.props = self.props
     

@@ -50,9 +50,11 @@ class MaskedScene:
     PLAYER_HITBOX_OFFSET_BOTTOM = None
     PLAYER_SPRITE_SCALE = None
     PLAYER_SPEED = None
+    SCENE_NAME = None  # Subclasses should set this to match registry name
     
     def __init__(self, game: Any, spawn: tuple = None):
         self.game = game
+        self.scene_name = self.SCENE_NAME  # Store scene name for item tracking
         self.active_modal = None  # Holds modal state when an arcade is open
         self.current_interact_prop = None  # Cached interactable prop for this frame
         
@@ -113,34 +115,70 @@ class MaskedScene:
         else:
             player_hitbox_offset_bottom = self.PLAYER_HITBOX_OFFSET_BOTTOM
         
-        if spawn:
-            # Spawn point is the center-bottom of the hitbox (feet position)
-            # Convert to sprite top-left coordinates
-            sprite_x = spawn[0] - player_hitbox_offset_centerx
-            sprite_y = spawn[1] - player_hitbox_offset_bottom
-            self.player = Player(
-                x=sprite_x, y=sprite_y, game=game,
-                hitbox_width=player_hitbox_width,
-                hitbox_height=player_hitbox_height,
-                hitbox_offset_centerx=player_hitbox_offset_centerx,
-                hitbox_offset_bottom=player_hitbox_offset_bottom,
-                sprite_scale=player_sprite_scale,
-                speed=self.PLAYER_SPEED
-            )
+        # Reuse existing player if available (preserves inventory across scenes)
+        if hasattr(game, 'player') and game.player:
+            self.player = game.player
+            # Update player's scale and regenerate animations if scale changed
+            if self.player.sprite_scale != player_sprite_scale:
+                self.player.sprite_scale = player_sprite_scale
+                # Recreate animations with new scale
+                if hasattr(self.player, 'spritesheet') and self.player.spritesheet:
+                    self.player.animations["down"] = self.player._create_animation([0, 1, 0, 2])
+                    self.player.animations["up"] = self.player._create_animation([3, 4, 3, 5])
+                    self.player.animations["left"] = self.player._create_animation([6, 7, 6, 8])
+                    self.player.animations["right"] = self.player._create_animation_mirrored([6, 7, 6, 8])
+                    # Update current animation
+                    if self.player.direction in self.player.animations:
+                        self.player.animation = self.player.animations[self.player.direction]
+                    # Update sprite
+                    if self.player.animation:
+                        self.player.sprite = self.player.animation.get_current_frame()
+            # Update player's hitbox dimensions and offsets to match the new scene's scale
+            self.player.collision_rect.width = player_hitbox_width
+            self.player.collision_rect.height = player_hitbox_height
+            self.player.hitbox_offset_centerx = player_hitbox_offset_centerx
+            self.player.hitbox_offset_bottom = player_hitbox_offset_bottom
+            # Update player position for spawn point
+            if spawn:
+                sprite_x = spawn[0] - player_hitbox_offset_centerx
+                sprite_y = spawn[1] - player_hitbox_offset_bottom
+                self.player.x = sprite_x
+                self.player.y = sprite_y
         else:
-            self.player = Player(
-                x=self.world_width // 2, y=self.world_height // 2, game=game,
-                hitbox_width=player_hitbox_width,
-                hitbox_height=player_hitbox_height,
-                hitbox_offset_centerx=player_hitbox_offset_centerx,
-                hitbox_offset_bottom=player_hitbox_offset_bottom,
-                sprite_scale=player_sprite_scale,
-                speed=self.PLAYER_SPEED
-            )
+            # Create new player
+            if spawn:
+                # Spawn point is the center-bottom of the hitbox (feet position)
+                # Convert to sprite top-left coordinates
+                sprite_x = spawn[0] - player_hitbox_offset_centerx
+                sprite_y = spawn[1] - player_hitbox_offset_bottom
+                self.player = Player(
+                    x=sprite_x, y=sprite_y, game=game,
+                    hitbox_width=player_hitbox_width,
+                    hitbox_height=player_hitbox_height,
+                    hitbox_offset_centerx=player_hitbox_offset_centerx,
+                    hitbox_offset_bottom=player_hitbox_offset_bottom,
+                    sprite_scale=player_sprite_scale,
+                    speed=self.PLAYER_SPEED
+                )
+            else:
+                self.player = Player(
+                    x=self.world_width // 2, y=self.world_height // 2, game=game,
+                    hitbox_width=player_hitbox_width,
+                    hitbox_height=player_hitbox_height,
+                    hitbox_offset_centerx=player_hitbox_offset_centerx,
+                    hitbox_offset_bottom=player_hitbox_offset_bottom,
+                    sprite_scale=player_sprite_scale,
+                    speed=self.PLAYER_SPEED
+                )
+            # Store player on game object
+            game.player = self.player
         
-        # Configure player for mask-based collision
+        # Configure player for mask-based collision (update every scene)
         self.player.mask_system = self.mask_system
         self.player.collision_rects = []
+        # Update collision rect after configuring everything
+        self.player.collision_rect.centerx = int(self.player.x) + player_hitbox_offset_centerx
+        self.player.collision_rect.bottom = int(self.player.y) + player_hitbox_offset_bottom
         # Props list will be set by subclasses (e.g., in cat_cafe_scene)
         if not hasattr(self, 'props'):
             self.props = []
@@ -153,9 +191,14 @@ class MaskedScene:
             return f"{parts[0]}_mask.png"
         return f"{background_path}_mask.png"
 
-    def _open_arcade_modal(self, prop: Any) -> None:
-        """Open a simple modal overlay for arcade interaction."""
-        # If this is the blocks arcade, start tetris
+    def _interact_with_prop(self, prop: Any) -> None:
+        """Handle prop interaction - pick up items or open modals for arcades."""
+        # Handle item pickup
+        if getattr(prop, 'is_item', False) and not getattr(prop, 'picked_up', False):
+            self._pickup_item(prop)
+            return
+        
+        # If this is the blocks arcade, start blocks
         if getattr(prop, 'name', None) == 'arcade_blocks':
             self.active_modal = {
                 "type": "blocks",
@@ -170,6 +213,75 @@ class MaskedScene:
             }
         else:
             self.active_modal = {"type": "generic", "prop": prop}
+
+    def _pickup_item(self, prop: Any) -> None:
+        """Add an item prop to player inventory and mark it as picked up."""
+        if self.player and hasattr(self.player, 'inventory'):
+            # Add item data to inventory
+            item_to_add = getattr(prop, 'item_data', {}).copy()
+            if not item_to_add.get('name'):
+                item_to_add['name'] = getattr(prop, 'name', 'unknown_item')
+            # Store variant info and scale for when we drop it again
+            if hasattr(prop, 'variant_index'):
+                item_to_add['variant_index'] = prop.variant_index
+            if hasattr(prop, 'scale'):
+                item_to_add['scale'] = prop.scale
+            self.player.inventory.add_item(item_to_add)
+            # Mark the prop as picked up so it doesn't show in the scene
+            prop.picked_up = True
+            
+            # Track item pickup globally so it doesn't respawn in original scene
+            if hasattr(prop, 'item_id') and prop.item_id:
+                self.game.picked_up_items.add(prop.item_id)
+            
+            print(f"Picked up: {item_to_add.get('name')}")
+        else:
+            print("Warning: Player has no inventory to pick up item into")
+
+    def _spawn_dropped_item(self, item: dict, player: Any) -> None:
+        """Spawn an item prop at the player's feet position."""
+        from entities.prop_registry import make_prop
+        
+        item_name = item.get('name', 'unknown')
+        variant_index = item.get('variant_index', 0)
+        scale = item.get('scale', None)
+        
+        # Calculate drop position at player's feet with slight random offset
+        import random
+        offset_x = random.randint(-20, 20)
+        offset_y = random.randint(-10, 10)
+        drop_x = player.collision_rect.centerx + offset_x
+        drop_y = player.collision_rect.bottom + offset_y
+        
+        try:
+            # Create the prop at drop position (with unique ID for this dropped instance)
+            dropped_prop = make_prop(item_name, drop_x, drop_y, self.game, variant_index=variant_index, scale=scale)
+            dropped_prop.picked_up = False
+            
+            # Add to scene props
+            if hasattr(self, 'props'):
+                self.props.append(dropped_prop)
+                # Update player's prop reference
+                if hasattr(self.player, 'props'):
+                    self.player.props = self.props
+            
+            # Track this dropped item globally
+            if self.scene_name:
+                if self.scene_name not in self.game.dropped_items:
+                    self.game.dropped_items[self.scene_name] = []
+                
+                # Store dropped item data for scene respawn
+                self.game.dropped_items[self.scene_name].append({
+                    'name': item_name,
+                    'x': drop_x,
+                    'y': drop_y,
+                    'variant_index': variant_index,
+                    'scale': scale,
+                })
+            
+            print(f"Dropped {item_name} at ({drop_x}, {drop_y})")
+        except Exception as e:
+            print(f"Failed to drop item {item_name}: {e}")
     
     def handle_event(self, event: pygame.event.Event) -> None:
         # If a modal is open, route inputs or close
@@ -201,7 +313,7 @@ class MaskedScene:
         # Interact with prop via Enter
         if event.type == pygame.KEYDOWN and event.key in (pygame.K_RETURN, pygame.K_KP_ENTER):
             if self.current_interact_prop:
-                self._open_arcade_modal(self.current_interact_prop)
+                self._interact_with_prop(self.current_interact_prop)
                 return
 
         # Interact with prop via mouse click (left)
@@ -210,16 +322,23 @@ class MaskedScene:
             world_x, world_y = mx + self.camera.x, my + self.camera.y
 
             prop = self.current_interact_prop
+            prop_scale = getattr(prop, 'scale', 1.0)
+            
             if hasattr(prop, 'sprite') and prop.sprite:
                 bbox = prop.sprite.get_bounding_rect(min_alpha=1)
-                prop_rect = pygame.Rect(prop.x + bbox.x, prop.y + bbox.y, bbox.width, bbox.height)
+                # Account for scale when determining clickable area
+                scaled_width = int(bbox.width * prop_scale)
+                scaled_height = int(bbox.height * prop_scale)
+                scaled_x = int(bbox.x * prop_scale)
+                scaled_y = int(bbox.y * prop_scale)
+                prop_rect = pygame.Rect(prop.x + scaled_x, prop.y + scaled_y, scaled_width, scaled_height)
             elif hasattr(prop, 'rect'):
                 prop_rect = prop.rect
             else:
                 prop_rect = pygame.Rect(prop.x, prop.y, 1, 1)
 
             if prop_rect.collidepoint(world_x, world_y):
-                self._open_arcade_modal(prop)
+                self._interact_with_prop(prop)
                 return
     
     def update(self, dt: float) -> None:
@@ -273,6 +392,9 @@ class MaskedScene:
         # Add props
         if hasattr(self, 'props'):
             for prop in self.props:
+                # Skip picked-up items
+                if getattr(prop, 'picked_up', False):
+                    continue
                 # Prefer prop.depth() if available to ignore transparent interaction extensions
                 if hasattr(prop, 'depth') and callable(prop.depth):
                     prop_bottom = prop.depth()
@@ -312,8 +434,9 @@ class MaskedScene:
                 if DEBUG_DRAW:
                     if hasattr(obj, 'mask') and obj.mask:
                         prop_x, prop_y = self.camera.apply(obj.x, obj.y)
-                        mask_width = obj.mask.get_width()
-                        mask_height = obj.mask.get_height()
+                        prop_scale = getattr(obj, 'scale', 1.0)
+                        mask_width = int(obj.mask.get_width() * prop_scale)
+                        mask_height = int(obj.mask.get_height() * prop_scale)
                         pygame.draw.rect(surface, (255, 128, 0), (prop_x, prop_y, mask_width, mask_height), 2)
                     elif hasattr(obj, 'rect'):
                         prop_x, prop_y = self.camera.apply(obj.rect.x, obj.rect.y)

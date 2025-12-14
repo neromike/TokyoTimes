@@ -14,7 +14,7 @@ class Prop:
     Black pixels in mask = walkable; transparent/other = blocked (collision handled in player).
     """
 
-    def __init__(self, x: float, y: float, sprite_path: str, mask_path: str = None, game=None, name: str = None, variants: int = 1, variant_index: int = 0, scale: float = 1.0):
+    def __init__(self, x: float, y: float, sprite_path: str, mask_path: str = None, game=None, name: str = None, variants: int = 1, variant_index: int = 0, scale: float = 1.0, is_item: bool = False, item_data: dict = None, item_id: str = None):
         self.x = x
         self.y = y
         self.name = name
@@ -24,6 +24,10 @@ class Prop:
         self._sheet = None
         self.variants = max(1, int(variants))
         self.variant_index = max(0, int(variant_index))
+        self.is_item = bool(is_item)
+        self.item_data = item_data or {}
+        self.item_id = item_id  # Unique identifier for tracking across scenes
+        self.picked_up = False
         self.mask = None
         self._mask_sheet = None
 

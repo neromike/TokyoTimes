@@ -1,6 +1,7 @@
 import pygame
 from entities.character import Character
 from entities.components.animation import Spritesheet, Animation
+from entities.components.inventory import Inventory
 from entities.player_config import (
     PLAYER_HITBOX_WIDTH,
     PLAYER_HITBOX_HEIGHT,
@@ -24,6 +25,7 @@ class Player(Character):
         self.collision_rects = []  # Will be set by scene
         self.props = []  # Scene props for collision/interact
         self.interact_prop = None  # Prop currently interactable under hitbox
+        self.inventory = Inventory()  # Player inventory for items
         self.props = []  # List of props in the scene (set by scene)
         
         # Use custom values or defaults
@@ -90,8 +92,13 @@ class Player(Character):
             if not hasattr(prop, 'mask') or not prop.mask or not hasattr(prop, 'x') or not hasattr(prop, 'y'):
                 continue
             
-            # Check if rect overlaps with prop's bounding box
-            prop_rect = pygame.Rect(prop.x, prop.y, prop.mask.get_width(), prop.mask.get_height())
+            # Get prop scale, default to 1.0 if not set
+            prop_scale = getattr(prop, 'scale', 1.0)
+            
+            # Check if rect overlaps with prop's bounding box (accounting for scale)
+            scaled_width = int(prop.mask.get_width() * prop_scale)
+            scaled_height = int(prop.mask.get_height() * prop_scale)
+            prop_rect = pygame.Rect(prop.x, prop.y, scaled_width, scaled_height)
             if not rect.colliderect(prop_rect):
                 continue
             
@@ -106,9 +113,9 @@ class Player(Character):
             ]
             
             for px, py in sample_points:
-                # Convert world coordinates to prop mask coordinates
-                local_x = int(px - prop.x)
-                local_y = int(py - prop.y)
+                # Convert world coordinates to prop mask coordinates (accounting for scale)
+                local_x = int((px - prop.x) / prop_scale)
+                local_y = int((py - prop.y) / prop_scale)
                 
                 # Check if point is within mask bounds
                 if 0 <= local_x < prop.mask.get_width() and 0 <= local_y < prop.mask.get_height():

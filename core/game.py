@@ -21,6 +21,10 @@ class Game:
         self.events = EventBus()
         self.saves = SaveSystem(Path("game/saves"))
         self.running = True
+        
+        # Global item state tracking
+        self.picked_up_items = set()  # Set of unique item IDs that have been picked up from their original locations
+        self.dropped_items = {}  # Dict mapping scene_name -> list of dropped item data
 
         self.stack.push(TitleScene(self))
 
