@@ -27,6 +27,7 @@ class CatCafeScene(MaskedScene):
     # Prop positions - configure here
     ARCADE_CABINET_POS = (600, 350)
     ARCADE_BLOCKS_POS = (740, 350)
+    CAT_FOOD_DISH_POS = (850, 650)
     
     def __init__(self, game: Any, spawn: tuple = None):
         # Initialize props list before calling super().__init__ so player can access it
@@ -37,7 +38,8 @@ class CatCafeScene(MaskedScene):
         # Add props to the scene
         self.arcade_cabinet = make_prop("arcade_spaceship", self.ARCADE_CABINET_POS[0], self.ARCADE_CABINET_POS[1], game)
         self.arcade_cabinet_blocks = make_prop("arcade_blocks", self.ARCADE_BLOCKS_POS[0], self.ARCADE_BLOCKS_POS[1], game)
-        self.props = [self.arcade_cabinet, self.arcade_cabinet_blocks]
+        self.cat_food_dish = make_prop("cat_food_dish", self.CAT_FOOD_DISH_POS[0], self.CAT_FOOD_DISH_POS[1], game, scale=2.0)
+        self.props = [self.arcade_cabinet, self.arcade_cabinet_blocks, self.cat_food_dish]
         # Update player's prop reference
         self.player.props = self.props
     
