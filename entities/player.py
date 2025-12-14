@@ -22,6 +22,7 @@ class Player(Character):
         self.direction = "down"
         self.animations = {}
         self.collision_rects = []  # Will be set by scene
+        self.props = []  # List of props in the scene (set by scene)
         
         # Use custom values or defaults
         hitbox_width = hitbox_width if hitbox_width is not None else PLAYER_HITBOX_WIDTH
@@ -75,6 +76,58 @@ class Player(Character):
         anim.frame_indices = frame_indices
         anim.mirrored = True
         return anim
+    
+    def _rect_collides_with_props(self, rect: pygame.Rect) -> bool:
+        """Check if rect collides with any prop mask.
+        Black pixels = walkable, transparent = blocked, other colors = blocked.
+        """
+        for prop in self.props:
+            if not hasattr(prop, 'mask') or not prop.mask or not hasattr(prop, 'x') or not hasattr(prop, 'y'):
+                continue
+            
+            # Check if rect overlaps with prop's bounding box
+            prop_rect = pygame.Rect(prop.x, prop.y, prop.mask.get_width(), prop.mask.get_height())
+            if not rect.colliderect(prop_rect):
+                continue
+            
+            # Sample collision points within the mask
+            # Check corners and center of the rect
+            sample_points = [
+                (rect.left, rect.top),
+                (rect.right - 1, rect.top),
+                (rect.left, rect.bottom - 1),
+                (rect.right - 1, rect.bottom - 1),
+                (rect.centerx, rect.centery),
+            ]
+            
+            for px, py in sample_points:
+                # Convert world coordinates to prop mask coordinates
+                local_x = int(px - prop.x)
+                local_y = int(py - prop.y)
+                
+                # Check if point is within mask bounds
+                if 0 <= local_x < prop.mask.get_width() and 0 <= local_y < prop.mask.get_height():
+                    try:
+                        # Get pixel color at this position
+                        color = prop.mask.get_at((local_x, local_y))
+                        
+                        # Check if transparent (alpha = 0)
+                        if len(color) >= 4 and color[3] == 0:
+                            # Transparent - collision!
+                            return True
+                        elif len(color) >= 3:
+                            # Check if it's black (walkable): (0, 0, 0) or close to it
+                            r, g, b = color[0], color[1], color[2]
+                            is_black = r < 50 and g < 50 and b < 50  # Allow slight variance
+                            
+                            if not is_black and color[3] > 0 if len(color) >= 4 else True:
+                                # Not black and not transparent - collision!
+                                return True
+                    except Exception as e:
+                        print(f"Error checking prop collision: {e}")
+                        continue
+        
+        return False
 
     def update(self, dt: float) -> None:
         keys = pygame.key.get_pressed()
@@ -129,8 +182,11 @@ class Player(Character):
             new_rect.centerx = int(new_x) + self.hitbox_offset_centerx
             new_rect.bottom = int(new_y) + self.hitbox_offset_bottom
             
-            # Check if new position collides
-            if not self.mask_system.rect_collides(new_rect):
+            # Check if new position collides with room or props
+            room_collides = self.mask_system.rect_collides(new_rect)
+            prop_collides = self._rect_collides_with_props(new_rect)
+            
+            if not room_collides and not prop_collides:
                 # No collision - allow full movement
                 pass
             else:
@@ -150,7 +206,7 @@ class Player(Character):
                         test_rect.centerx = int(new_x) + self.hitbox_offset_centerx
                         test_rect.bottom = int(test_y) + self.hitbox_offset_bottom
                         
-                        if not self.mask_system.rect_collides(test_rect):
+                        if not self.mask_system.rect_collides(test_rect) and not self._rect_collides_with_props(test_rect):
                             new_y = test_y
                             found_slide = True
                             break
@@ -162,7 +218,7 @@ class Player(Character):
                         test_rect.centerx = int(test_x) + self.hitbox_offset_centerx
                         test_rect.bottom = int(new_y) + self.hitbox_offset_bottom
                         
-                        if not self.mask_system.rect_collides(test_rect):
+                        if not self.mask_system.rect_collides(test_rect) and not self._rect_collides_with_props(test_rect):
                             new_x = test_x
                             found_slide = True
                             break
@@ -177,9 +233,9 @@ class Player(Character):
                     test_rect_y.centerx = int(old_x) + self.hitbox_offset_centerx
                     test_rect_y.bottom = int(new_y) + self.hitbox_offset_bottom
                     
-                    if not self.mask_system.rect_collides(test_rect_x):
+                    if not self.mask_system.rect_collides(test_rect_x) and not self._rect_collides_with_props(test_rect_x):
                         new_y = old_y
-                    elif not self.mask_system.rect_collides(test_rect_y):
+                    elif not self.mask_system.rect_collides(test_rect_y) and not self._rect_collides_with_props(test_rect_y):
                         new_x = old_x
                     else:
                         new_x, new_y = old_x, old_y

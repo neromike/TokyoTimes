@@ -28,11 +28,16 @@ class CatCafeScene(MaskedScene):
     ARCADE_CABINET_POS = (600, 350)
     
     def __init__(self, game: Any, spawn: tuple = None):
+        # Initialize props list before calling super().__init__ so player can access it
+        self.props = []
+        
         super().__init__(game, spawn)
         
-        # Add props
+        # Add props to the scene
         self.arcade_cabinet = ArcadeCabinet(x=self.ARCADE_CABINET_POS[0], y=self.ARCADE_CABINET_POS[1], game=game)
         self.props = [self.arcade_cabinet]
+        # Update player's prop reference
+        self.player.props = self.props
     
     def update(self, dt: float) -> None:
         super().update(dt)

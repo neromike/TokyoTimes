@@ -134,6 +134,10 @@ class MaskedScene:
         # Configure player for mask-based collision
         self.player.mask_system = self.mask_system
         self.player.collision_rects = []
+        # Props list will be set by subclasses (e.g., in cat_cafe_scene)
+        if not hasattr(self, 'props'):
+            self.props = []
+        self.player.props = self.props
     
     def _get_mask_path(self, background_path: str) -> str:
         """Convert background path to mask path by inserting '_mask' before extension."""
@@ -188,6 +192,18 @@ class MaskedScene:
             hb_surf.fill((0, 255, 0, 80))
             surface.blit(hb_surf, (coll_x, coll_y))
             pygame.draw.rect(surface, (0, 255, 0), (coll_x, coll_y, self.player.collision_rect.width, self.player.collision_rect.height), 2)
+        
+        # Draw prop bounding boxes (debug)
+        if DEBUG_DRAW and hasattr(self, 'props'):
+            for prop in self.props:
+                if hasattr(prop, 'mask') and prop.mask:
+                    prop_x, prop_y = self.camera.apply(prop.x, prop.y)
+                    mask_width = prop.mask.get_width()
+                    mask_height = prop.mask.get_height()
+                    pygame.draw.rect(surface, (255, 128, 0), (prop_x, prop_y, mask_width, mask_height), 2)
+                elif hasattr(prop, 'rect'):
+                    prop_x, prop_y = self.camera.apply(prop.rect.x, prop.rect.y)
+                    pygame.draw.rect(surface, (255, 128, 0), (prop_x, prop_y, prop.rect.width, prop.rect.height), 2)
     
     def _enter_portal(self, portal_id: int) -> None:
         """Handle portal transition using scene registry."""

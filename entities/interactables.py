@@ -15,16 +15,23 @@ class ArcadeCabinet:
         self.y = y
         self.game = game
         self.sprite = None
+        self.mask = None  # Collision mask for the prop
         
         # Load arcade cabinet image
         if game:
             try:
-                self.sprite = game.assets.image("props/arcade_cabinet_spaceship_128x192.png")
+                self.sprite = game.assets.image("props/arcade_cabinet_spaceship.png")
             except Exception as e:
                 print(f"Warning: Could not load arcade cabinet: {e}")
                 # Create placeholder
                 self.sprite = pygame.Surface((128, 192))
                 self.sprite.fill((100, 100, 100))
+            
+            # Load arcade cabinet mask
+            try:
+                self.mask = game.assets.image("props/arcade_cabinet_spaceship_mask.png")
+            except Exception as e:
+                print(f"Warning: Could not load arcade cabinet mask: {e}")
         
         if self.sprite:
             self.rect = self.sprite.get_rect(topleft=(x, y))
