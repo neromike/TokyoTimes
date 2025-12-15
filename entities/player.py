@@ -234,8 +234,65 @@ class Player(Character):
             prop_collides = self._rect_collides_with_props(new_rect)
             
             if room_collides or prop_collides:
-                # Collision detected - block movement
-                new_x, new_y = old_x, old_y
+                # Collision detected - try sliding along walls
+                # Calculate movement deltas
+                dx = new_x - old_x
+                dy = new_y - old_y
+                
+                import math
+                movement_magnitude = math.sqrt(dx*dx + dy*dy)
+                
+                # Generate slide attempts
+                slide_attempts = []
+                
+                # Try axis-aligned slides first (for diagonal movement into straight walls)
+                if dx != 0:
+                    slide_attempts.append((dx, 0))  # X-only
+                if dy != 0:
+                    slide_attempts.append((0, dy))  # Y-only
+                
+                # Try diagonal slides (for cardinal movement into diagonal walls)
+                # Only try slides that maintain some original direction
+                if movement_magnitude > 0:
+                    if abs(dx) >= abs(dy):
+                        # Moving horizontally - try diagonal slides with perpendicular component
+                        slide_attempts.extend([
+                            (dx * 0.7, movement_magnitude * 0.7),   # Diagonal up
+                            (dx * 0.7, -movement_magnitude * 0.7),  # Diagonal down
+                            (dx * 0.5, movement_magnitude * 0.5),
+                            (dx * 0.5, -movement_magnitude * 0.5),
+                        ])
+                    else:
+                        # Moving vertically - try diagonal slides with perpendicular component
+                        slide_attempts.extend([
+                            (movement_magnitude * 0.7, dy * 0.7),   # Diagonal right
+                            (-movement_magnitude * 0.7, dy * 0.7),  # Diagonal left
+                            (movement_magnitude * 0.5, dy * 0.5),
+                            (-movement_magnitude * 0.5, dy * 0.5),
+                        ])
+                    
+                    # Also try reduced movement
+                    slide_attempts.extend([
+                        (dx * 0.7, dy * 0.7),
+                        (dx * 0.5, dy * 0.5),
+                    ])
+                
+                # Test each slide attempt
+                slid = False
+                for slide_dx, slide_dy in slide_attempts:
+                    test_slide_rect = collision_box.copy()
+                    test_slide_rect.x += int(old_x + slide_dx)
+                    test_slide_rect.y += int(old_y + slide_dy)
+                    
+                    if not (self.mask_system.rect_collides(test_slide_rect) or self._rect_collides_with_props(test_slide_rect)):
+                        new_x = old_x + slide_dx
+                        new_y = old_y + slide_dy
+                        slid = True
+                        break
+                
+                # If nothing worked, stop
+                if not slid:
+                    new_x, new_y = old_x, old_y
             
             self.velocity_x = (new_x - old_x) / dt if dt > 0 else 0
             self.velocity_y = (new_y - old_y) / dt if dt > 0 else 0
