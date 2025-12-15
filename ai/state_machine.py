@@ -114,7 +114,6 @@ class WanderState(State):
                 self.npc.path = []
                 return
             npc_name = getattr(self.npc, 'npc_id', '?')
-            print(f"    [WanderState] {npc_name}: Loaded off-screen mask, finding wander point")
         
         target_x = None
         target_y = None
@@ -156,9 +155,6 @@ class WanderState(State):
             
             # This point is valid - not in portal and not too close
             target_x, target_y = test_x, test_y
-            if is_offscreen:
-                npc_name = getattr(self.npc, 'npc_id', '?')
-                print(f"    [WanderState] {npc_name}: Selected wander target ({int(target_x)}, {int(target_y)}) after {attempt + 1} attempts")
             break
         
         # Store target and set up movement
@@ -224,7 +220,6 @@ class WanderState(State):
                 print(f"    [WanderState] {npc_name}: Failed to load mask image: {mask_path}")
                 return None
             
-            print(f"    [WanderState] {npc_name}: Successfully loaded mask for {scene_name} from {mask_path}")
             return MaskCollisionSystem(mask_img)
         except Exception as e:
             npc_name = getattr(self.npc, 'npc_id', 'Unknown')
@@ -287,8 +282,6 @@ class TravelToSceneState(State):
         connections = graph.connections.get(current_scene, [])
 
         portals = [{"to_scene": conn[1], "spawn": conn[2]} for conn in connections]
-        
-        print(f"    Scene graph found {len(portals)} portals from {current_scene}: {[p.get('to_scene') for p in portals]}")
 
         # If scene object has a PORTAL_MAP, include those too (defensive)
         if hasattr(self.npc, 'scene') and hasattr(self.npc.scene, 'PORTAL_MAP') and self.npc.scene and self.npc.scene.PORTAL_MAP:

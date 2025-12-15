@@ -153,8 +153,6 @@ class InventoryScene:
         # Spawn the item prop at player's feet position
         if hasattr(active_scene, '_spawn_dropped_item'):
             active_scene._spawn_dropped_item(item, player)
-        
-        print(f"Dropped: {item.get('name', 'unknown')}")
 
     def update(self, dt: float) -> None:
         # Update save message timer

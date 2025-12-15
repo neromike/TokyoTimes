@@ -314,7 +314,6 @@ class MaskedScene:
                                 npc.pathfind_to(portal_center_x, portal_center_y, avoid_portals=False)
                     else:
                         # Reached final scene
-                        #print(f"  {npc_name} reached final destination scene {self.scene_name}")
                         npc.scene_path = None
     
     def _get_mask_path(self, background_path: str) -> str:
@@ -387,7 +386,6 @@ class MaskedScene:
                 if hasattr(prop, 'item_id') and prop.item_id:
                     self.game.picked_up_items.add(prop.item_id)
             
-            print(f"Picked up: {item_to_add.get('name')}")
         else:
             print("Warning: Player has no inventory to pick up item into")
 
@@ -522,7 +520,6 @@ class MaskedScene:
                 test_y = initial_y + step * math.sin(angle_rad)
                 
                 if is_valid_drop_location(test_x, test_y):
-                    #print(f"Found valid drop location at ({test_x:.0f}, {test_y:.0f}) after {attempt} attempts")
                     return (test_x, test_y)
         
         # Fallback: return initial position even if invalid (shouldn't happen in normal play)
@@ -850,7 +847,6 @@ class MaskedScene:
         
         portal_config = self.PORTAL_MAP.get(portal_id)
         if not portal_config:
-            print(f"Warning: No portal config for portal {portal_id} in scene {self.scene_name}")
             return
         
         target_scene_name = portal_config.get("to_scene")
@@ -872,11 +868,9 @@ class MaskedScene:
             scaled_offset_y = int(npc.mask_offset_y * npc.sprite_scale)
             npc.x = spawn[0] - scaled_offset_x
             npc.y = spawn[1] - scaled_offset_y
-            #print(f"NPC spawn: feet={spawn}, offset=({scaled_offset_x},{scaled_offset_y}), sprite pos=({npc.x},{npc.y})")
         else:
             npc.x = spawn[0]
             npc.y = spawn[1]
-            #print(f"NPC spawn (no offset): {spawn}")
         
         # Update rect if it exists
         if hasattr(npc, 'rect'):

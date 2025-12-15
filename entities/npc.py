@@ -224,13 +224,11 @@ class NPC(Character):
                     
                     # Only transition if we're at the expected portal or path is complete
                     if expected_portal_id == portal_id or (not self.path or self.current_waypoint_idx >= len(self.path)):
-                        #print(f"NPC reached portal {portal_id} (intentional), requesting scene transition")
                         if hasattr(self.scene, 'trigger_npc_portal_transition'):
                             self.scene.trigger_npc_portal_transition(self, portal_id)
                         self.current_scene_step += 1
                 else:
                     # Unintentional portal entry (e.g., wandering too close)
-                    #print(f"NPC accidentally entered portal {portal_id}, triggering scene transition")
                     if hasattr(self.scene, 'trigger_npc_portal_transition'):
                         self.scene.trigger_npc_portal_transition(self, portal_id)
                     # Clear current path since we're leaving the scene
@@ -308,8 +306,6 @@ class NPC(Character):
         # Get current feet position for pathfinding
         start_x, start_y = self._get_feet_position()
         
-        #print(f"    [pathfind_to] {npc_name}: from ({int(start_x)}, {int(start_y)}) to ({int(target_x)}, {int(target_y)}), avoid_portals={avoid_portals}")
-        
         # Store destination for re-pathfinding
         self.destination = (target_x, target_y)
         self.stuck_timer = 0.0
@@ -382,12 +378,6 @@ class NPC(Character):
             (world_width, world_height)
         )
         self.current_waypoint_idx = 0
-        """
-        if self.path:
-            print(f"NPC pathfinding from ({start_x}, {start_y}) to ({target_x}, {target_y}): found {len(self.path)} waypoints")
-        else:
-            print(f"NPC pathfinding from ({start_x}, {start_y}) to ({target_x}, {target_y}): no path found")
-        """
 
     def pathfind_to_scene(self, target_scene: str, target_x: float = None, target_y: float = None):
         """Pathfind to a location in a different scene (or current scene).
@@ -401,8 +391,6 @@ class NPC(Character):
         # Get current scene from world registry (more reliable than self.scene)
         from world.world_registry import get_npc_location
         current_scene = get_npc_location(npc_name)
-        
-        #print(f"    [pathfind_to_scene] {npc_name}: from {current_scene} to {target_scene}")
         
         if not current_scene:
             # Fallback to self.scene if registry lookup fails
@@ -424,13 +412,10 @@ class NPC(Character):
         scene_graph = get_scene_graph()
         scene_path = scene_graph.find_scene_path(current_scene, target_scene)
         
-        print(f"      Scene graph path: {[s[0] for s in scene_path] if scene_path else 'None'}")
-        
         if not scene_path:
             print(f"      No path found from scene '{current_scene}' to '{target_scene}'")
             return
         
-        #print(f"NPC cross-scene path from {current_scene} to {target_scene}: {scene_path}")
         
         # Store the scene path and final destination
         self.target_scene = target_scene
@@ -443,7 +428,6 @@ class NPC(Character):
             next_step = scene_path[1]
             portal_spawn = first_step[2]
             next_scene = next_step[0]
-            print(f"      Off-screen: fast-forward hop {first_step[0]} -> {next_scene} at spawn {portal_spawn}")
             try:
                 from world.world_registry import move_npc_to_scene
                 move_npc_to_scene(npc_name, next_scene)
