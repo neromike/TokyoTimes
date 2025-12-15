@@ -104,16 +104,21 @@ class WanderState(State):
         # Get feet position as reference point for wander calculations
         feet_x, feet_y = self.npc._get_feet_position()
         
-        # If off-screen, load mask for destination validation
+        # If off-screen, use precached mask for destination validation
         if not mask_system:
-            mask_system = self._load_offscreen_mask()
+            from world.mask_cache import get_mask_for_scene
+            from world.world_registry import get_npc_location
+            
+            npc_name = getattr(self.npc, 'npc_id', '?')
+            scene_name = get_npc_location(npc_name)
+            
+            mask_system = get_mask_for_scene(scene_name)
             if not mask_system:
-                # Can't wander without a mask
-                npc_name = getattr(self.npc, 'npc_id', '?')
-                print(f"    [WanderState] {npc_name}: Failed to load off-screen mask, skipping wander")
+                print(f"    [WanderState] {npc_name}: No precached mask for {scene_name}, skipping wander")
                 self.npc.path = []
                 return
-            npc_name = getattr(self.npc, 'npc_id', '?')
+        
+        npc_name = getattr(self.npc, 'npc_id', '?')
         
         target_x = None
         target_y = None
@@ -177,54 +182,6 @@ class WanderState(State):
             print(f"    [WanderState] {npc_name}: No valid wander target found after {WANDER_MAX_ATTEMPTS} attempts")
             self.npc.path = []
             self.warp_time = 0.0
-    
-    def _load_offscreen_mask(self):
-        """Load collision mask for off-screen NPC's current scene."""
-        try:
-            from world.world_registry import get_npc_location
-            from scenes.scene_registry import get_scene_class
-            from world.mask_collision import MaskCollisionSystem
-            
-            npc_name = getattr(self.npc, 'npc_id', None)
-            scene_name = get_npc_location(npc_name)
-            
-            if not scene_name:
-                print(f"    [WanderState] {npc_name}: No scene found in registry")
-                return None
-            
-            scene_class = get_scene_class(scene_name)
-            if not scene_class:
-                print(f"    [WanderState] {npc_name}: Scene class not found for {scene_name}")
-                return None
-            
-            background_path = getattr(scene_class, 'BACKGROUND_PATH', None)
-            if not background_path:
-                print(f"    [WanderState] {npc_name}: No BACKGROUND_PATH in {scene_name}")
-                return None
-            
-            # Get mask path from background path
-            if '.' in background_path:
-                parts = background_path.rsplit('.', 1)
-                mask_path = f"{parts[0]}_mask.png"
-            else:
-                mask_path = f"{background_path}_mask.png"
-            
-            # Load mask from game assets
-            game = getattr(self.npc, 'game', None)
-            if not game or not hasattr(game, 'assets'):
-                print(f"    [WanderState] {npc_name}: No game.assets available")
-                return None
-            
-            mask_img = game.assets.image(mask_path)
-            if not mask_img:
-                print(f"    [WanderState] {npc_name}: Failed to load mask image: {mask_path}")
-                return None
-            
-            return MaskCollisionSystem(mask_img)
-        except Exception as e:
-            npc_name = getattr(self.npc, 'npc_id', 'Unknown')
-            print(f"    [WanderState] {npc_name}: Exception loading mask: {e}")
-            return None
     
     def update(self, dt: float) -> None:
         super().update(dt)

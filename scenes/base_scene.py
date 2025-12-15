@@ -25,7 +25,7 @@ from scenes.minigames.asteroids import AsteroidsState
 
 
 # Debug flag - set to False to hide collision/portal debug visuals
-DEBUG_DRAW = True
+DEBUG_DRAW = False
 
 
 class MaskedScene:

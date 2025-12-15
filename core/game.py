@@ -25,6 +25,10 @@ class Game:
 
         # Initialize a fresh run state (player/world/collections)
         self.reset_run_state()
+        
+        # Precache all scene masks for off-screen NPC wandering
+        from world.mask_cache import precache_all_masks
+        precache_all_masks(self)
 
         self.stack.push(TitleScene(self))
 
