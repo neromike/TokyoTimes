@@ -630,6 +630,17 @@ class MaskedScene:
                         break
                 
                 self.hud_dragging_item = None
+
+        elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
+            # Right-click drops the item in the active quick slot
+            if self.player and hasattr(self.player, 'inventory'):
+                idx = self.selected_inventory_slot
+                inventory_items = self.player.inventory.items
+                if idx < len(inventory_items) and inventory_items[idx] is not None:
+                    item = inventory_items[idx]
+                    inventory_items[idx] = None
+                    self._spawn_dropped_item(item, self.player)
+            return
         
         # Handle inventory slot selection (1-5 keys, only when no modal is open)
         if event.type == pygame.KEYDOWN and event.key in (pygame.K_1, pygame.K_2, pygame.K_3, pygame.K_4, pygame.K_5):
@@ -637,6 +648,11 @@ class MaskedScene:
             return
 
         if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+            from scenes.inventory_scene import InventoryScene
+            self.game.stack.push(InventoryScene(self.game))
+
+        # Open backpack with TAB
+        if event.type == pygame.KEYDOWN and event.key == pygame.K_TAB:
             from scenes.inventory_scene import InventoryScene
             self.game.stack.push(InventoryScene(self.game))
 

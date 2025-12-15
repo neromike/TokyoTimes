@@ -13,7 +13,18 @@ class TitleScene:
         self.title_font = pygame.font.Font(None, 64)
         self.menu_font = pygame.font.Font(None, 36)
         self.options = ["Start", "Load", "Exit"]
+        # Default to Start, but select Load if any save slot has data
         self.selected = 0
+        if hasattr(game, "saves"):
+            try:
+                for slot in ("slot1", "slot2", "slot3"):
+                    run_state, _ = game.saves.load(slot)
+                    if run_state:  # non-empty run_state means saved game exists
+                        self.selected = 1  # highlight Load
+                        break
+            except Exception:
+                # If save load fails, keep default selection
+                pass
         self.option_rects = []  # Store menu option rects for click detection
 
     def handle_event(self, event: pygame.event.Event) -> None:

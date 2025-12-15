@@ -25,6 +25,8 @@ class InventoryScene:
         # Drag state
         self.dragging_item: Optional[Tuple[str, int]] = None  # (source_type, index) where source_type is "quick" or "backpack"
         self.drag_offset: Tuple[int, int] = (0, 0)
+        self.drag_start_pos: Tuple[int, int] = (0, 0)
+        self.drag_moved: bool = False
         
         # Menu state
         self.show_menu = False
@@ -57,6 +59,12 @@ class InventoryScene:
 
         elif event.type == pygame.MOUSEMOTION:
             if self.dragging_item and not self.show_menu:
+                # Track movement to distinguish click vs drag
+                if not self.drag_moved:
+                    dx = event.pos[0] - self.drag_start_pos[0]
+                    dy = event.pos[1] - self.drag_start_pos[1]
+                    if abs(dx) > 4 or abs(dy) > 4:
+                        self.drag_moved = True
                 self.drag_offset = event.pos
 
         elif event.type == pygame.MOUSEBUTTONDOWN:
@@ -67,10 +75,18 @@ class InventoryScene:
                     self._handle_menu_click(event.pos)
                 else:
                     self._handle_inventory_click(event.pos)
+        elif event.type == pygame.KEYDOWN and not self.show_menu and not self.save_slot_selection:
+            # Mirror main HUD hotkeys: 1-5 selects active quick slot
+            if event.key in (pygame.K_1, pygame.K_2, pygame.K_3, pygame.K_4, pygame.K_5):
+                selected_slot = event.key - pygame.K_1
+                active_scene = self._get_scene_with_selected_slot()
+                if active_scene:
+                    active_scene.selected_inventory_slot = selected_slot
+                return
         
         elif event.type == pygame.MOUSEBUTTONUP:
             if event.button == 1 and self.dragging_item and not self.show_menu:  # Left mouse release
-                # Try to drop on a target slot
+                # Drop without changing active slot
                 self._try_drop_on_slot(event.pos)
 
     def _handle_save_slot_selection(self, event: pygame.event.Event) -> None:
@@ -131,6 +147,8 @@ class InventoryScene:
             if rect.collidepoint(pos):
                 self.dragging_item = ("quick", i)
                 self.drag_offset = pos
+                self.drag_start_pos = pos
+                self.drag_moved = False
                 return
         
         # Check backpack slots
@@ -141,6 +159,8 @@ class InventoryScene:
                     index = row * self.BACKPACK_COLS + col
                     self.dragging_item = ("backpack", index)
                     self.drag_offset = pos
+                    self.drag_start_pos = pos
+                    self.drag_moved = False
                     return
 
     def _get_quick_slot_rect(self, slot: int) -> pygame.Rect:
@@ -161,6 +181,19 @@ class InventoryScene:
             if hasattr(scene, 'player') and scene.player:
                 return scene.player
         return None
+
+    def _get_scene_with_selected_slot(self):
+        """Get the active scene that tracks selected_inventory_slot."""
+        for scene in self.game.stack._stack:
+            if hasattr(scene, 'selected_inventory_slot'):
+                return scene
+        return None
+
+    def _get_selected_slot(self) -> int:
+        scene = self._get_scene_with_selected_slot()
+        if scene:
+            return getattr(scene, 'selected_inventory_slot', 0)
+        return 0
 
     def _drop_dragged_item(self) -> None:
         """Drop the currently dragged item into the world."""
@@ -229,34 +262,43 @@ class InventoryScene:
         
         self.dragging_item = None
 
-    def _try_drop_on_slot(self, pos: Tuple[int, int]) -> None:
-        """Try to drop the dragged item on a target slot."""
+    def _try_drop_on_slot(self, pos: Tuple[int, int]) -> Optional[Tuple[str, int]]:
+        """Try to drop the dragged item on a target slot. Returns (type, index) if dropped, else None."""
         if not self.dragging_item:
-            return
+            return None
         
         player = self._get_player()
         if not player or not hasattr(player, 'inventory'):
             self.dragging_item = None
-            return
+            return None
         
+        target: Optional[Tuple[str, int]] = None
         # Check if dropped on quick slots
         for i in range(5):
             rect = self._get_quick_slot_rect(i)
             if rect.collidepoint(pos):
-                self._handle_drop("quick", i)
-                return
+                target = ("quick", i)
+                break
         
         # Check if dropped on backpack slots
-        for row in range(self.BACKPACK_ROWS):
-            for col in range(self.BACKPACK_COLS):
-                rect = self._get_backpack_slot_rect(row, col)
-                if rect.collidepoint(pos):
-                    slot_index = row * self.BACKPACK_COLS + col
-                    self._handle_drop("backpack", slot_index)
-                    return
-        
+        if target is None:
+            for row in range(self.BACKPACK_ROWS):
+                for col in range(self.BACKPACK_COLS):
+                    rect = self._get_backpack_slot_rect(row, col)
+                    if rect.collidepoint(pos):
+                        slot_index = row * self.BACKPACK_COLS + col
+                        target = ("backpack", slot_index)
+                        break
+                if target:
+                    break
+
+        if target:
+            self._handle_drop(target[0], target[1])
+            return target
+
         # No valid drop target - just clear the dragging state
         self.dragging_item = None
+        return None
 
     def update(self, dt: float) -> None:
         if self.save_message_timer > 0:
@@ -297,10 +339,11 @@ class InventoryScene:
         quick_label = self.menu_font.render("Quick Slots", True, (200, 200, 200))
         surface.blit(quick_label, (self.QUICK_SLOTS_X, self.QUICK_SLOTS_Y - 30))
         
+        selected_slot = self._get_selected_slot()
         for slot in range(5):
             rect = self._get_quick_slot_rect(slot)
             item = inventory_items[slot] if slot < len(inventory_items) else None
-            self._draw_slot(surface, rect, item, slot, "quick")
+            self._draw_slot(surface, rect, item, slot, "quick", selected_slot)
 
         # Draw backpack label and grid
         backpack_label = self.menu_font.render("Backpack", True, (200, 200, 200))
@@ -312,7 +355,7 @@ class InventoryScene:
                 inv_index = slot_index + 5  # Backpack starts after quick slots
                 item = inventory_items[inv_index] if inv_index < len(inventory_items) else None
                 rect = self._get_backpack_slot_rect(row, col)
-                self._draw_slot(surface, rect, item, slot_index, "backpack")
+                self._draw_slot(surface, rect, item, slot_index, "backpack", selected_slot)
 
         # Draw dragging item if any
         if self.dragging_item:
@@ -322,7 +365,7 @@ class InventoryScene:
         instructions = self.item_font.render("Drag items to move | TAB for menu | ESC to close", True, (150, 150, 150))
         surface.blit(instructions, (20, surface.get_height() - 30))
 
-    def _draw_slot(self, surface: pygame.Surface, rect: pygame.Rect, item: Any, slot_index: int, slot_type: str) -> None:
+    def _draw_slot(self, surface: pygame.Surface, rect: pygame.Rect, item: Any, slot_index: int, slot_type: str, selected_slot: int) -> None:
         """Draw a single inventory slot."""
         is_dragging_this = (self.dragging_item and 
                            self.dragging_item[0] == slot_type and 
@@ -332,8 +375,9 @@ class InventoryScene:
         bg_color = (50, 50, 50) if not is_dragging_this else (40, 40, 40)
         pygame.draw.rect(surface, bg_color, rect)
         
-        border_color = (150, 150, 150) if not is_dragging_this else (100, 100, 100)
-        border_width = 2 if not is_dragging_this else 1
+        is_selected_quick = slot_type == "quick" and slot_index == selected_slot
+        border_color = (255, 200, 0) if is_selected_quick else ((150, 150, 150) if not is_dragging_this else (100, 100, 100))
+        border_width = 3 if is_selected_quick else (2 if not is_dragging_this else 1)
         pygame.draw.rect(surface, border_color, rect, border_width)
 
         if item is not None:

@@ -3,8 +3,8 @@
     "scene": "cat_cafe",
     "room": "cat_cafe",
     "player": {
-      "x": 740.7,
-      "y": 514.4,
+      "x": 490.7680628122491,
+      "y": 469.0680628122494,
       "direction": "left",
       "inventory": [
         {
@@ -15,18 +15,30 @@
           "variant_index": 0,
           "variants": 3,
           "scale": 2.0
-        }
+        },
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
       ]
     },
     "world": {
       "npcs": [
         {
           "id": "henry",
-          "x": 491.44552587426415,
-          "y": 367.9767796986357,
-          "direction": "up",
+          "x": 1009.8485175435362,
+          "y": 428.8004195829376,
+          "direction": "left",
           "npc_type": "henry",
-          "scene": "cat_cafe"
+          "scene": "cat_cafe_kitchen"
         }
       ],
       "props": [
@@ -69,7 +81,7 @@
     "picked_up_items": [
       "cat_food_dish"
     ],
-    "selected_inventory_slot": 1
+    "selected_inventory_slot": 0
   },
   "knowledge": {
     "seen_intro": true
