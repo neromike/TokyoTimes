@@ -125,14 +125,6 @@ class NPC(Character):
         self.current_scene_step = 0  # Which step in the scene path we're on
         # Cache for off-screen mask sampling per scene
         self.offscreen_mask_cache = {}
-    
-    def log_state_change(self, new_state: str) -> None:
-        """Log when this NPC changes state."""
-        npc_name = getattr(self, 'npc_id', 'Unknown')
-        # Get scene from world registry (more up-to-date than npc.scene)
-        from world.world_registry import get_npc_location
-        scene_name = get_npc_location(npc_name) or 'Unknown'
-
 
     def _create_animation(self, frame_indices: list) -> Animation:
         anim = Animation(self.spritesheet, fps=6, scale=self.sprite_scale)
@@ -177,10 +169,8 @@ class NPC(Character):
             scaled_offset_y = int(self.mask_offset_y * self.sprite_scale)
             return (self.x + scaled_offset_x, self.y + scaled_offset_y)
         else:
-            # Fallback: assume bottom-center of sprite
-            if self.sprite:
-                return (self.x + self.sprite.get_width() // 2, self.y + self.sprite.get_height())
-            return (self.x, self.y)
+            # Fallback: bottom-center of sprite
+            return (self.x + self.sprite.get_width() // 2, self.y + self.sprite.get_height())
     
     def _set_position_from_feet(self, feet_x: float, feet_y: float):
         """Set NPC position based on feet coordinates.
@@ -194,13 +184,9 @@ class NPC(Character):
             self.x = feet_x - scaled_offset_x
             self.y = feet_y - scaled_offset_y
         else:
-            # Fallback: assume bottom-center of sprite
-            if self.sprite:
-                self.x = feet_x - (self.sprite.get_width() // 2)
-                self.y = feet_y - self.sprite.get_height()
-            else:
-                self.x = feet_x
-                self.y = feet_y
+            # Fallback: bottom-center of sprite
+            self.x = feet_x - (self.sprite.get_width() // 2)
+            self.y = feet_y - self.sprite.get_height()
 
     def update(self, dt: float) -> None:
         # Skip update if transitioning between scenes

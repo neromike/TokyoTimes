@@ -932,7 +932,6 @@ class MaskedScene:
                             npc.target_scene = None
             else:
                 # Scene not active: clear immediate pathfinding but preserve scene_path for cross-scene travel
-                print(f"Target scene {target_scene_name} not yet active, deferring NPC setup to scene load")
                 npc.path = []
                 npc.destination = None
                 # Keep scene/mask_system/props cleared so state machine knows NPC is off-screen

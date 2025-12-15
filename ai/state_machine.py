@@ -19,7 +19,6 @@ DEFAULT_NPC_SPEED = 100.0
 
 # Wander constants
 WANDER_MAX_ATTEMPTS = 20
-WANDER_OFFSCREEN_ATTEMPTS = 30
 TWO_PI = 2 * math.pi
 TRAVEL_PROBABILITY_MULT = 0.2  # Boost for mid-travel idle
 
@@ -222,11 +221,9 @@ class TravelToSceneState(State):
         super().enter()
         npc_name = getattr(self.npc, 'npc_id', '?')
         
-        # Determine current scene using registry (works for off-screen NPCs)
+        # Determine current scene using registry
         from world.world_registry import get_npc_location
         current_scene = get_npc_location(npc_name)
-        if not current_scene and hasattr(self.npc, 'scene') and self.npc.scene:
-            current_scene = getattr(self.npc.scene, 'scene_name', None)
         
         if not current_scene:
             self.npc.path = []
@@ -239,13 +236,6 @@ class TravelToSceneState(State):
         connections = graph.connections.get(current_scene, [])
 
         portals = [{"to_scene": conn[1], "spawn": conn[2]} for conn in connections]
-
-        # If scene object has a PORTAL_MAP, include those too (defensive)
-        if hasattr(self.npc, 'scene') and hasattr(self.npc.scene, 'PORTAL_MAP') and self.npc.scene and self.npc.scene.PORTAL_MAP:
-            for cfg in self.npc.scene.PORTAL_MAP.values():
-                to_scene = cfg.get('to_scene')
-                spawn = cfg.get('spawn')
-                portals.append({"to_scene": to_scene, "spawn": spawn})
 
         if not portals:
             self.npc.path = []
@@ -286,31 +276,20 @@ class TravelToSceneState(State):
         npc_name = getattr(self.npc, 'npc_id', None)
         current_scene_name = get_npc_location(npc_name)
         
-        if not current_scene_name:
+        if not current_scene_name or not self.npc.game:
             return
         
         # Check if this scene is currently active
-        game = getattr(self.npc, 'game', None)
-        if not game or not hasattr(game, 'stack'):
-            return
-        
-        active_scene = game.stack.top()
+        active_scene = self.npc.game.stack.top()
         if not active_scene or getattr(active_scene, 'scene_name', None) != current_scene_name:
-            # Destination scene is not active, NPC will be loaded when that scene becomes active
             return
         
-        # Scene is active - make sure NPC is in its npcs list
-        if not hasattr(active_scene, 'npcs'):
-            active_scene.npcs = []
-        
-        # Check if NPC is already in the scene
+        # Add NPC to scene if not already present
         if self.npc not in active_scene.npcs:
-            # Re-add the NPC to the scene
             active_scene.npcs.append(self.npc)
-            # Update NPC's scene systems
             self.npc.scene = active_scene
-            self.npc.mask_system = getattr(active_scene, 'mask_system', None)
-            self.npc.props = getattr(active_scene, 'props', None)
+            self.npc.mask_system = active_scene.mask_system
+            self.npc.props = active_scene.props
     
     def update(self, dt: float) -> None:
         super().update(dt)
