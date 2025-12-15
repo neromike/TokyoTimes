@@ -1,1 +1,76 @@
-{"run": {}, "knowledge": {}}
+{
+  "run": {
+    "scene": "cat_cafe",
+    "room": "cat_cafe",
+    "player": {
+      "x": 639.1999999999997,
+      "y": 484.2999999999999,
+      "direction": "right",
+      "inventory": []
+    },
+    "world": {
+      "npcs": [
+        {
+          "id": "henry",
+          "x": 299,
+          "y": 373,
+          "direction": "up",
+          "npc_type": "henry",
+          "scene": "cat_cafe"
+        }
+      ],
+      "props": [
+        {
+          "id": "arcade_spaceship",
+          "x": 600,
+          "y": 350,
+          "variant_index": 0,
+          "base_scale": 1.0,
+          "is_item": false,
+          "item_id": "arcade_spaceship",
+          "picked_up": false,
+          "scene": "cat_cafe"
+        },
+        {
+          "id": "arcade_blocks",
+          "x": 740,
+          "y": 350,
+          "variant_index": 0,
+          "base_scale": 1.0,
+          "is_item": false,
+          "item_id": "arcade_blocks",
+          "picked_up": false,
+          "scene": "cat_cafe"
+        },
+        {
+          "id": "cat_food_dish",
+          "x": 980,
+          "y": 670,
+          "variant_index": 0,
+          "base_scale": 2.0,
+          "is_item": true,
+          "item_id": "cat_food_dish",
+          "picked_up": true,
+          "scene": "cat_cafe"
+        }
+      ]
+    },
+    "dropped_items": {
+      "cat_cafe_kitchen": [
+        {
+          "name": "cat_food_dish",
+          "x": 935,
+          "y": 643,
+          "variant_index": 0,
+          "scale": 2.0
+        }
+      ]
+    },
+    "picked_up_items": [
+      "cat_food_dish"
+    ]
+  },
+  "knowledge": {
+    "seen_intro": true
+  }
+}

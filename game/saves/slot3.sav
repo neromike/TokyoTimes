@@ -3,8 +3,8 @@
     "scene": "cat_cafe",
     "room": "cat_cafe",
     "player": {
-      "x": 446.99268401470863,
-      "y": 433.69268401470794,
+      "x": 668.7000000000002,
+      "y": 512.0,
       "direction": "left",
       "inventory": []
     },

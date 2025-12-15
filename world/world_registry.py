@@ -59,6 +59,8 @@ def initialize_world(game) -> None:
             is_item=prop_def.get('is_item', False),
             item_data=prop_def.get('item_data', None),
         )
+        # Ensure item_id exists so pickups can be tracked consistently
+        prop.item_id = prop_def.get('item_id', prop_id)
         prop.prop_id = prop_id
         _props[prop_id] = prop
         _prop_locations[prop_id] = prop_def['initial_scene']
@@ -121,6 +123,78 @@ def get_all_npcs() -> List[NPC]:
 def get_all_props() -> List[Prop]:
     """Get all props in the world."""
     return list(_props.values())
+
+
+def snapshot_world_state() -> dict:
+    """Serialize NPC and prop state for saving."""
+    npcs = []
+    for npc_id, npc in _npcs.items():
+        npcs.append({
+            "id": npc_id,
+            "x": getattr(npc, "x", 0),
+            "y": getattr(npc, "y", 0),
+            "direction": getattr(npc, "direction", None),
+            "npc_type": getattr(npc, "npc_type", None),
+            "scene": _npc_locations.get(npc_id),
+        })
+
+    props = []
+    for prop_id, prop in _props.items():
+        # Store base scale so we can reapply scene scale later
+        base_scale = getattr(prop, "base_scale", getattr(prop, "scale", 1.0))
+        props.append({
+            "id": prop_id,
+            "x": getattr(prop, "x", 0),
+            "y": getattr(prop, "y", 0),
+            "variant_index": getattr(prop, "variant_index", 0),
+            "base_scale": base_scale,
+            "is_item": getattr(prop, "is_item", False),
+            "item_id": getattr(prop, "item_id", prop_id),
+            "picked_up": getattr(prop, "picked_up", False),
+            "scene": _prop_locations.get(prop_id),
+        })
+
+    return {"npcs": npcs, "props": props}
+
+
+def apply_world_state(state: dict, game) -> None:
+    """Apply serialized world state back into the live registry."""
+    if not state:
+        return
+
+    # Restore NPC positions and locations
+    for npc_state in state.get("npcs", []):
+        npc_id = npc_state.get("id")
+        if not npc_id or npc_id not in _npcs:
+            continue
+        npc = _npcs[npc_id]
+        npc.x = npc_state.get("x", npc.x)
+        npc.y = npc_state.get("y", npc.y)
+        npc.direction = npc_state.get("direction", getattr(npc, "direction", "down"))
+        if npc_state.get("scene"):
+            _npc_locations[npc_id] = npc_state["scene"]
+
+    # Restore props
+    for prop_state in state.get("props", []):
+        prop_id = prop_state.get("id")
+        if not prop_id or prop_id not in _props:
+            continue
+        prop = _props[prop_id]
+        prop.x = prop_state.get("x", prop.x)
+        prop.y = prop_state.get("y", prop.y)
+        prop.picked_up = prop_state.get("picked_up", getattr(prop, "picked_up", False))
+        prop.item_id = prop_state.get("item_id", getattr(prop, "item_id", prop_id))
+
+        # Reapply saved base scale and variant
+        saved_base_scale = prop_state.get("base_scale")
+        if saved_base_scale is not None:
+            prop.base_scale = saved_base_scale
+            prop.scale = prop.base_scale * getattr(prop, "scene_scale", 1.0)
+        if hasattr(prop, "set_variant"):
+            prop.set_variant(prop_state.get("variant_index", getattr(prop, "variant_index", 0)))
+
+        if prop_state.get("scene"):
+            _prop_locations[prop_id] = prop_state["scene"]
 
 
 def remove_npc(npc_id: str) -> None:

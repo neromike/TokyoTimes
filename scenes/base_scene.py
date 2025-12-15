@@ -176,6 +176,13 @@ class MaskedScene:
         # Update collision rect after configuring everything
         self.player.collision_rect.centerx = int(self.player.x) + player_hitbox_offset_centerx
         self.player.collision_rect.bottom = int(self.player.y) + player_hitbox_offset_bottom
+
+        # If a pending player state exists (from loading), apply it now
+        pending_state = getattr(self.game, "pending_player_state", None)
+        if pending_state:
+            if hasattr(self.game, "saves"):
+                self.game.saves.apply_player_state(self.player, pending_state)
+            self.game.pending_player_state = None
         
         # Load props from world registry
         self._load_scene_props()

@@ -3,18 +3,18 @@
     "scene": "cat_cafe",
     "room": "cat_cafe",
     "player": {
-      "x": 446.99268401470863,
-      "y": 433.69268401470794,
-      "direction": "left",
+      "x": 1157.5014285349855,
+      "y": 389.49857146501233,
+      "direction": "right",
       "inventory": []
     },
     "world": {
       "npcs": [
         {
           "id": "henry",
-          "x": 329,
-          "y": 503,
-          "direction": "down",
+          "x": 262.41609819368796,
+          "y": 493.0133292970005,
+          "direction": "left",
           "npc_type": "henry",
           "scene": "cat_cafe"
         }

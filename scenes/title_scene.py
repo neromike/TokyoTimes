@@ -5,13 +5,14 @@ from core.scene import Scene
 # Import scenes to register them
 from scenes.cat_cafe_scene import CatCafeScene
 from scenes.cat_cafe_kitchen_scene import CatCafeKitchenScene
+from scenes.load_game_scene import LoadGameScene
 
 class TitleScene:
     def __init__(self, game: Any):
         self.game = game
         self.title_font = pygame.font.Font(None, 64)
         self.menu_font = pygame.font.Font(None, 36)
-        self.options = ["Start", "Save", "Load", "Exit"]
+        self.options = ["Start", "Load", "Exit"]
         self.selected = 0
         self.option_rects = []  # Store menu option rects for click detection
 
@@ -44,12 +45,13 @@ class TitleScene:
     def _activate_option(self) -> None:
         choice = self.options[self.selected].lower()
         if choice == "start":
+            # Start a brand-new run: reset global state and clear any previous scenes
+            if hasattr(self.game, "reset_run_state"):
+                self.game.reset_run_state()
+            self.game.stack._stack = [self]
             self.game.stack.push(CatCafeScene(self.game))
-        elif choice == "save":
-            self.game.saves.save("slot1", {"room": "cat_cafe"}, {"seen_intro": True})
         elif choice == "load":
-            run, knowledge = self.game.saves.load("slot1")
-            self.game.stack.push(CatCafeScene(self.game))
+            self.game.stack.push(LoadGameScene(self.game))
         elif choice == "exit":
             self.game.quit()
 
