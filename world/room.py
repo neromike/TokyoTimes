@@ -1,3 +1,5 @@
+# Currently unused
+
 import pygame
 
 class Room:

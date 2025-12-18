@@ -1,3 +1,5 @@
+# Currently unused
+
 import json
 from pathlib import Path
 from world.room import Room
