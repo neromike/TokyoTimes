@@ -9,7 +9,7 @@
   "schedule": [
     {
       "time": "08:00",
-      "action": "idle",
+      "action": "idle"
       
     },
     {
@@ -21,7 +21,7 @@
     },
     {
       "time": "09:00",
-      "action": "idle",
+      "action": "idle"
       
     },
     {
@@ -40,7 +40,7 @@
     },
     {
       "time": "11:00",
-      "action": "idle",
+      "action": "idle"
       
     },
     {
@@ -52,7 +52,7 @@
     },
     {
       "time": "13:00",
-      "action": "idle",
+      "action": "idle"
       
     },
     {
@@ -78,7 +78,7 @@
     },
     {
       "time": "17:00",
-      "action": "idle",
+      "action": "idle"
       
     },
     {
@@ -97,7 +97,7 @@
     },
     {
       "time": "20:00",
-      "action": "idle",
+      "action": "idle"
       
     },
     {
