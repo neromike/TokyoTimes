@@ -128,16 +128,18 @@ class ScheduleController:
         
         current_time = self.get_current_game_time_minutes()
         
-        # Check if we need to advance to next action
-        if not self.is_executing or self._is_action_complete():
-            # Look for next scheduled action
-            next_action = self._find_next_action(current_time)
-            
-            if next_action and next_action != self.current_action:
-                # Time to start new action
-                self._start_action(next_action)
-            elif not self.is_executing and current_time > 0:
-                # Log waiting status occasionally (every ~10 game minutes)
+        # Always evaluate the most recent action that should be active by now
+        next_action = self._find_next_action(current_time)
+        
+        if next_action and next_action != self.current_action:
+            # Preempt current action at scheduled time
+            self._start_action(next_action)
+        else:
+            # If current action finished early (e.g., reached destination), mark idle
+            if self.is_executing and self._is_action_complete():
+                self.is_executing = False
+            # Occasional wait log when idle before first action of the day
+            if not self.is_executing and current_time > 0:
                 if not hasattr(self, '_last_wait_log') or current_time - self._last_wait_log >= 10:
                     self._last_wait_log = current_time
                     hours = current_time // 60
@@ -174,11 +176,8 @@ class ScheduleController:
         action_type = self.current_action.action_type
         
         if action_type == "idle":
-            # Check if idle duration has elapsed
-            duration = self.current_action.params.get("duration", 0)
-            current_game_time = self.get_current_game_time_minutes() * 60  # Convert to seconds
-            elapsed = current_game_time - self.action_start_time
-            return elapsed >= duration
+            # Idle persists until the next scheduled action.
+            return False
         
         elif action_type in ["move_to", "navigate_to_scene"]:
             # Check if NPC has reached destination (no path remaining)
@@ -212,8 +211,7 @@ class ScheduleController:
             self.npc.destination = None  # Clear destination to prevent re-pathing
             self.npc.scene_path = None  # Clear scene path
             self.npc.target_scene = None
-            duration = params.get("duration", 60)
-            print(f"  -> Idling for {duration} seconds")
+            print(f"  -> Idling until next scheduled action")
         
         elif action_type == "move_to":
             # Move to coordinates in current or specified scene
