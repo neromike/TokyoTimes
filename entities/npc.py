@@ -433,6 +433,22 @@ class NPC(Character):
                     self.y = portal_spawn[1] - scaled_offset_y
                 elif portal_spawn:
                     self.x, self.y = portal_spawn
+                # If the target scene is currently active, attach and rescale now
+                active_scene = getattr(getattr(self, 'game', None), 'stack', None).top() if getattr(getattr(self, 'game', None), 'stack', None) else None
+                if active_scene and getattr(active_scene, 'scene_name', None) == next_scene:
+                    # Attach references
+                    self.scene = active_scene
+                    self.mask_system = getattr(active_scene, 'mask_system', None)
+                    self.props = getattr(active_scene, 'props', [])
+                    # Apply scene scaling via scene helper if available
+                    if hasattr(active_scene, '_rescale_and_update_npc'):
+                        active_scene._rescale_and_update_npc(self, active_scene)
+                    # Ensure NPC is tracked in the active scene list
+                    if hasattr(active_scene, 'npcs') and self not in active_scene.npcs:
+                        active_scene.npcs.append(self)
+                    # Reset last_position for stuck detection
+                    self.last_position = self._get_feet_position()
+                    print(f"[NPC FastForward] npc={npc_name} joined active scene={next_scene} scene_scale={getattr(active_scene,'scene_scale',1.0)} sprite_scale={getattr(self,'sprite_scale','?')}")
                 # Trim the scene_path to continue from the new scene
                 self.scene_path = scene_path[1:]
                 self.current_scene_step = 0
