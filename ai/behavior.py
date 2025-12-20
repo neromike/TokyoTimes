@@ -1,3 +1,5 @@
+# Currently unused
+
 class Behavior:
     def follow(self, npc, target):
         pass

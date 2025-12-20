@@ -89,7 +89,7 @@ class BlocksState:
                 self.pos[0] = nx
         elif key in (pygame.K_d, pygame.K_RIGHT):
             nx = self.pos[0] + 1
-            if not self.collides(self.pos[0], self.pos[1], self.current):
+            if not self.collides(nx, self.pos[1], self.current):
                 self.pos[0] = nx
         elif key in (pygame.K_s, pygame.K_DOWN):
             ny = self.pos[1] + 1

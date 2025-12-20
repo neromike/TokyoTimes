@@ -1,3 +1,5 @@
+# Currently unused
+
 import pygame
 from typing import Protocol
 

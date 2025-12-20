@@ -1,3 +1,5 @@
+# Currently unused
+
 import pygame
 from world.room import Room
 from world.room_loader import RoomLoader
