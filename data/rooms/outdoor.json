@@ -1,0 +1,47 @@
+{
+  "scene_name": "outdoor",
+  "background": "backgrounds/outdoor.jpg",
+  "scale": 0.4,
+  "portals": [
+    {
+      "id": 0,
+      "to_scene": "arcade",
+      "spawn": [257, 380]
+    },
+    {
+      "id": 1,
+      "to_scene": "cat_cafe",
+      "spawn": [217, 411]
+    },
+    {
+      "id": 2,
+      "to_scene": "arcade",
+      "spawn": [257, 380]
+    },
+    {
+      "id": 3,
+      "to_scene": "arcade",
+      "spawn": [257, 380]
+    },
+    {
+      "id": 4,
+      "to_scene": "arcade",
+      "spawn": [257, 380]
+    },
+    {
+      "id": 5,
+      "to_scene": "arcade",
+      "spawn": [257, 380]
+    },
+    {
+      "id": 6,
+      "to_scene": "outdoor",
+      "spawn": [1480, 750]
+    },
+    {
+      "id": 7,
+      "to_scene": "outdoor",
+      "spawn": [61, 750]
+    }
+  ]
+}

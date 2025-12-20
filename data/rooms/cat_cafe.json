@@ -1,0 +1,17 @@
+{
+  "scene_name": "cat_cafe",
+  "background": "backgrounds/cat_cafe.jpg",
+  "scale": 1.0,
+  "portals": [
+    {
+      "id": 0,
+      "to_scene": "outdoor",
+      "spawn": [107, 512]
+    },
+    {
+      "id": 1,
+      "to_scene": "cat_cafe_kitchen",
+      "spawn": [1085, 490]
+    }
+  ]
+}

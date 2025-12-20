@@ -34,8 +34,7 @@ def initialize_world(game) -> None:
             x=npc_def['x'],
             y=npc_def['y'],
             game=game,
-            sprite_scale=npc_def.get('sprite_scale', 1.0),
-            config=npc_def.get('config', None)
+            sprite_scale=npc_def.get('sprite_scale', 1.0)
         )
         npc.npc_id = npc_id
         npc.npc_type = npc_def.get('type', 'henry')

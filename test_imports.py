@@ -2,8 +2,8 @@
 """Quick test to check if modules import without errors."""
 
 try:
-    print("Importing ai.state_machine...")
-    from ai.state_machine import StateMachine, IdleState, WanderState, TravelToSceneState
+    print("Importing ai.schedule...")
+    from ai.schedule import ScheduleController, ScheduleAction
     print("  OK")
     
     print("Importing entities.npc...")

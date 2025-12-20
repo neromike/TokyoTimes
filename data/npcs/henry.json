@@ -1,0 +1,108 @@
+{
+  "npc_id": "henry",
+  "speed": 100.0,
+  "initial_position": {
+    "scene": "cat_cafe",
+    "x": 400,
+    "y": 720
+  },
+  "schedule": [
+    {
+      "time": "08:00",
+      "action": "idle",
+      "duration": 300
+    },
+    {
+      "time": "08:30",
+      "action": "move_to",
+      "scene": "cat_cafe",
+      "x": 650,
+      "y": 850
+    },
+    {
+      "time": "09:00",
+      "action": "idle",
+      "duration": 180
+    },
+    {
+      "time": "09:30",
+      "action": "navigate_to_scene",
+      "target_scene": "cat_cafe_kitchen",
+      "x": 1085,
+      "y": 490
+    },
+    {
+      "time": "10:00",
+      "action": "move_to",
+      "scene": "cat_cafe_kitchen",
+      "x": 1200,
+      "y": 550
+    },
+    {
+      "time": "11:00",
+      "action": "idle",
+      "duration": 240
+    },
+    {
+      "time": "12:00",
+      "action": "navigate_to_scene",
+      "target_scene": "cat_cafe",
+      "x": 700,
+      "y": 800
+    },
+    {
+      "time": "13:00",
+      "action": "idle",
+      "duration": 300
+    },
+    {
+      "time": "14:00",
+      "action": "navigate_to_scene",
+      "target_scene": "outdoor",
+      "x": 300,
+      "y": 600
+    },
+    {
+      "time": "15:00",
+      "action": "move_to",
+      "scene": "outdoor",
+      "x": 500,
+      "y": 700
+    },
+    {
+      "time": "16:00",
+      "action": "navigate_to_scene",
+      "target_scene": "cat_cafe",
+      "x": 400,
+      "y": 720
+    },
+    {
+      "time": "17:00",
+      "action": "idle",
+      "duration": 600
+    },
+    {
+      "time": "18:00",
+      "action": "navigate_to_scene",
+      "target_scene": "outdoor",
+      "x": 200,
+      "y": 500
+    },
+    {
+      "time": "19:00",
+      "action": "navigate_to_scene",
+      "target_scene": "cat_cafe",
+      "x": 400,
+      "y": 720
+    },
+    {
+      "time": "20:00",
+      "action": "idle",
+      "duration": 1800
+    },
+    {
+      "time": "22:00",
+      "action": "loop"
+    }
+  ]
+}

@@ -1,7 +1,22 @@
-"""Configuration for different NPC personalities and behaviors."""
+"""Configuration for NPC properties.
+
+DEPRECATION NOTICE:
+As of the schedule system implementation, most behavioral parameters in this file
+(idle_min_duration, wander_probability, travel_probability, etc.) are no longer used.
+NPCs now follow time-based schedules defined in data/schedules/{npc_id}.json.
+
+The only parameter still actively used is:
+- speed: Movement speed in pixels per second
+
+See SCHEDULE_SYSTEM.md for the new NPC behavior system.
+"""
 
 class NPCConfig:
-    """Base configuration for NPC behavior."""
+    """Configuration for NPC properties.
+    
+    DEPRECATED: Most parameters are no longer used. NPCs now use schedule files.
+    Only 'speed' is still actively used for movement speed.
+    """
     def __init__(
         self,
         name: str,

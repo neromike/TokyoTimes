@@ -1,6 +1,8 @@
 """Base scene class with automatic mask-based collision support."""
 import pygame
 import random
+import json
+from pathlib import Path
 from typing import Any, Optional
 from entities.player import Player
 from entities.npc import NPC
@@ -34,6 +36,9 @@ class MaskedScene:
     Automatically loads a collision mask by appending '_mask' to the background filename.
     For example: 'backgrounds/scene.jpg' -> 'backgrounds/scene_mask.png'
     
+    Scene configuration can be loaded from JSON files in data/rooms/{scene_name}.json
+    or defined directly in the subclass.
+    
     Customize player size per scene by setting these class variables:
     - PLAYER_HITBOX_WIDTH
     - PLAYER_HITBOX_HEIGHT
@@ -43,7 +48,7 @@ class MaskedScene:
     - SCENE_SCALE (multiplier for all objects, default 1.0)
     """
     
-    # Subclasses should set these
+    # Subclasses should set these OR load from JSON
     BACKGROUND_PATH = None
     PORTAL_MAP = {}
     
@@ -56,8 +61,48 @@ class MaskedScene:
     SCENE_NAME = None  # Subclasses should set this to match registry name
     SCENE_SCALE = 1.0  # Optional per-scene multiplier for props/items
     
+    @classmethod
+    def _load_scene_config(cls, scene_name: str) -> dict:
+        """Load scene configuration from JSON file.
+        
+        Args:
+            scene_name: Name of the scene (e.g., 'cat_cafe')
+            
+        Returns:
+            Dict with scene configuration, or empty dict if file not found
+        """
+        try:
+            config_path = Path("data/rooms") / f"{scene_name}.json"
+            with open(config_path, 'r') as f:
+                return json.load(f)
+        except Exception as e:
+            print(f"Warning: Could not load scene config for {scene_name}: {e}")
+            return {}
+    
     def __init__(self, game: Any, spawn: tuple = None):
         self.game = game
+        
+        # Try to load from JSON first if SCENE_NAME is set
+        config = {}
+        if self.SCENE_NAME:
+            config = self._load_scene_config(self.SCENE_NAME)
+        
+        # Apply config values (JSON overrides class attributes)
+        if config:
+            if "background" in config and not self.BACKGROUND_PATH:
+                self.BACKGROUND_PATH = config["background"]
+            if "scale" in config:
+                self.SCENE_SCALE = config["scale"]
+            if "portals" in config and not self.PORTAL_MAP:
+                # Convert portal list to portal map
+                self.PORTAL_MAP = {
+                    portal["id"]: {
+                        "to_scene": portal["to_scene"],
+                        "spawn": tuple(portal["spawn"])
+                    }
+                    for portal in config["portals"]
+                }
+        
         self.scene_name = self.SCENE_NAME  # Store scene name for item tracking
         self.scene_scale = self.SCENE_SCALE if self.SCENE_SCALE is not None else 1.0
         self.active_modal = None  # Holds modal state when an arcade is open
@@ -895,11 +940,12 @@ class MaskedScene:
                         pygame.draw.circle(surface, (0, 255, 0), (int(npc_x), int(npc_y)), 5)
                         pygame.draw.circle(surface, (0, 100, 0), (int(npc_x), int(npc_y)), 5, 1)
                 
-                # Draw NPC state above character
-                if DEBUG_DRAW and hasattr(obj, 'state_machine'):
-                    state_name = obj.state_machine.get_current_state_name()
-                    if state_name:
-                        state_text = self.font.render(state_name, True, (255, 255, 0))
+                # Draw NPC schedule action above character
+                if DEBUG_DRAW and hasattr(obj, 'schedule_controller') and obj.schedule_controller:
+                    current_action = obj.schedule_controller.current_action
+                    if current_action:
+                        action_text = f"{current_action.action_type}@{current_action.time_str}"
+                        state_text = self.font.render(action_text, True, (255, 255, 0))
                         text_x = npc_x + (obj.sprite.get_width() // 2 if obj.sprite else 20) - (state_text.get_width() // 2)
                         text_y = npc_y
                         surface.blit(state_text, (text_x, text_y))

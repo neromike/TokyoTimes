@@ -1,8 +1,0 @@
-{
-  "id": "bob",
-  "schedule": [
-    {"time": "08:00", "state": "GoTo", "location": [10, 5]},
-    {"time": "08:30", "state": "DoActivity", "activity": "arcade"}
-  ],
-  "default": {"state": "Idle"}
-}

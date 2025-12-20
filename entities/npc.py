@@ -6,12 +6,11 @@ from core.sprites import SpriteLoader
 from core.sprite_registry import get_sprite_config
 from core.collision_masks import CollisionMaskExtractor
 from ai.pathfinding import Pathfinding
-from ai.state_machine import StateMachine
+from ai.schedule import ScheduleController
 from world.scene_graph import get_scene_graph
-from entities.npc_configs import NPCConfig, HENRY_CONFIG
 
 class NPC(Character):
-    def __init__(self, x: float, y: float, game=None, sprite_scale: float = 1.0, config: NPCConfig = None, scene_scale: float = 1.0):
+    def __init__(self, x: float, y: float, game=None, sprite_scale: float = 1.0, scene_scale: float = 1.0):
         self.game = game
         self.animation = None
         self.spritesheet = None
@@ -100,11 +99,9 @@ class NPC(Character):
         self.velocity_x = 0
         self.velocity_y = 0
         
-        # NPC Configuration (use provided or default to Henry's config)
-        self.config = config if config is not None else HENRY_CONFIG
         self.npc_type = "henry"  # Type identifier for scene tracking
-        # Base speed from config; scaled per-scene later
-        self.base_speed = getattr(self.config, "speed", 0.0)
+        # Base speed will be set from schedule; default for now
+        self.base_speed = 100.0  # Default, will be overridden by schedule
         self.speed = self.base_speed * self.scene_scale
         
         # Pathfinding - scale cell size with scene scale for finer grids in scaled scenes
@@ -120,8 +117,19 @@ class NPC(Character):
         self.repath_interval = 2.0  # Re-pathfind every N seconds if moving
         self.repath_timer = 0.0
         
-        # AI State Machine
-        self.state_machine = StateMachine(self, initial_state_name="IdleState")
+        # Schedule-based AI Controller
+        self.schedule_controller = None  # Will be set up after NPC is fully initialized
+        if game:
+            # Create schedule controller for this NPC
+            schedule_file = f"{self.npc_type}.json"
+            try:
+                self.schedule_controller = ScheduleController(schedule_file, self, game)
+                # Update speed from schedule
+                if self.schedule_controller and self.schedule_controller.speed is not None:
+                    self.base_speed = self.schedule_controller.speed
+                    self.speed = self.base_speed * self.scene_scale
+            except Exception as e:
+                print(f"Warning: Could not load schedule for {self.npc_type}: {e}")
         
         # Cross-scene pathfinding
         self.target_scene = None  # Target scene name for cross-scene movement
@@ -200,8 +208,9 @@ class NPC(Character):
         if getattr(self, 'transitioning', False):
             return
         
-        # Update AI state machine
-        self.state_machine.update(dt)
+        # Update schedule controller (replaces old state machine)
+        if self.schedule_controller:
+            self.schedule_controller.update(dt)
         
         # Check for portal collision (using center of mass / feet position)
         if self.mask_system and hasattr(self, 'scene'):

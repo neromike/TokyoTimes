@@ -75,17 +75,19 @@ TokyoTimes/
 │   └── save_system.py     # Save/load functionality
 │
 ├── scenes/                # Game screens/modes
+│   ├── base_scene.py      # Base scene with mask-based collision
+│   ├── generic_scene.py   # Generic scene that loads from JSON
+│   ├── scene_registry.py  # Auto-registers scenes from data/rooms/
 │   ├── title_scene.py     # Title screen with main menu
-│   ├── cat_cafe_scene.py  # Cat Cafe room (starting location)
-│   ├── world_scene.py     # Generic world/room scene
+│   ├── world_scene.py     # Legacy world scene
 │   ├── inventory_scene.py # Inventory/pause menu
-│   ├── pause_scene.py     # Pause screen (stub)
-│   ├── dialog_scene.py    # Dialogue display (stub)
+│   ├── pause_scene.py     # Pause screen
+│   ├── dialog_scene.py    # Dialogue display
+│   ├── load_game_scene.py # Load game menu
 │   └── minigames/         # Mini-game scenes
 │       ├── arcade_base.py # Base class for arcade games
-│       ├── fishing.py     # Fishing mini-game (stub)
-│       ├── rhythm.py      # Rhythm mini-game (stub)
-│       └── diving.py      # Diving mini-game (stub)
+│       ├── asteroids.py   # Asteroids mini-game
+│       └── blocks.py      # Block-breaking mini-game
 │
 ├── world/                 # World and room management
 │   ├── world.py           # Global world model
@@ -106,7 +108,7 @@ TokyoTimes/
 │       └── dialogue.py    # Dialogue component (stub)
 │
 ├── ai/                    # NPC AI and pathfinding
-│   ├── state_machine.py   # State machine for NPC behavior
+│   ├── schedule.py        # Schedule-based NPC behavior system
 │   ├── behavior.py        # NPC behaviors (follow, wander)
 │   ├── pathfinding.py     # A* pathfinding (stub)
 │   └── navigation.py      # Cross-room navigation (stub)
@@ -160,8 +162,11 @@ Reset on loop keeps run state fresh while preserving knowledge.
 All imports use absolute paths from the project root:
 ```python
 from core.game import Game
-from scenes.cat_cafe_scene import CatCafeScene
+from scenes.generic_scene import GenericScene
 from entities.player import Player
+
+# Load a scene from JSON
+scene = GenericScene(game, scene_name="cat_cafe")
 ```
 
 No relative imports (`.` or `..`) needed.

@@ -39,6 +39,16 @@ class Game:
         precache_all_masks(self)
 
         self.stack.push(TitleScene(self))
+    
+    @property
+    def hour(self) -> int:
+        """Current game hour (0-23)."""
+        return self.game_time // 60
+    
+    @property
+    def minute(self) -> int:
+        """Current game minute (0-59)."""
+        return self.game_time % 60
 
     def run(self):
         while self.running:

@@ -107,10 +107,15 @@ class LoadGameScene:
         # Clear stack and load target scene fresh
         self.game.stack._stack = []
         from scenes.scene_registry import get_scene_class
+        from scenes.generic_scene import GenericScene
         scene_class = get_scene_class(room)
         if scene_class is None:
-            from scenes.cat_cafe_scene import CatCafeScene
-            scene_class = CatCafeScene
+            # Fallback to cat_cafe if scene not found
+            scene_class = get_scene_class("cat_cafe")
+            if scene_class is None:
+                # Ultimate fallback: create GenericScene directly
+                self.game.stack.push(GenericScene(self.game, scene_name="cat_cafe"))
+                return
 
         self.game.stack.push(scene_class(self.game))
 

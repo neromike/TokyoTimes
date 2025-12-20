@@ -1,8 +1,0 @@
-{
-  "id": "room_002",
-  "spawn_points": {"from_001": [2, 2]},
-  "portals": [
-    {"rect": [10, 10, 40, 20], "to_room": "room_001", "to_spawn": "start"}
-  ],
-  "interactables": []
-}

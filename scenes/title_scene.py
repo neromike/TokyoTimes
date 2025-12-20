@@ -2,11 +2,8 @@ import pygame
 from typing import Any
 from core.scene import Scene
 
-# Import scenes to register them
-from scenes.cat_cafe_scene import CatCafeScene
-from scenes.cat_cafe_kitchen_scene import CatCafeKitchenScene
-from scenes.arcade_scene import ArcadeScene
-from scenes.outdoor_scene import OutdoorScene
+# Import scenes
+from scenes.generic_scene import GenericScene
 from scenes.load_game_scene import LoadGameScene
 
 class TitleScene:
@@ -62,7 +59,7 @@ class TitleScene:
             if hasattr(self.game, "reset_run_state"):
                 self.game.reset_run_state()
             self.game.stack._stack = [self]
-            self.game.stack.push(CatCafeScene(self.game))
+            self.game.stack.push(GenericScene(self.game, scene_name="cat_cafe"))
         elif choice == "load":
             self.game.stack.push(LoadGameScene(self.game))
         elif choice == "exit":

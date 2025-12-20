@@ -1,0 +1,12 @@
+{
+  "scene_name": "arcade",
+  "background": "backgrounds/acrade.jpg",
+  "scale": 1.0,
+  "portals": [
+    {
+      "id": 0,
+      "to_scene": "outdoor",
+      "spawn": [795, 530]
+    }
+  ]
+}

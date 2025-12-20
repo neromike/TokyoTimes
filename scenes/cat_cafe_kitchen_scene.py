@@ -4,20 +4,9 @@ from scenes.base_scene import MaskedScene
 from scenes.scene_registry import register_scene
 
 
-# Portal mapping: portal_id (from white regions in mask) -> scene configuration
-PORTAL_MAP = {
-    0: {
-        "to_scene": "cat_cafe",
-        "spawn": (650, 850),
-    },
-}
-
-
 class CatCafeKitchenScene(MaskedScene):
-    BACKGROUND_PATH = "backgrounds/cat_cafe_kitchen.jpg"
-    PORTAL_MAP = PORTAL_MAP
     SCENE_NAME = "cat_cafe_kitchen"
-    SCENE_SCALE = 1.1
+    # Configuration loaded from data/rooms/cat_cafe_kitchen.json
     
     def __init__(self, game: Any, spawn: tuple = None):
         super().__init__(game, spawn)
