@@ -132,6 +132,11 @@ class ScheduleController:
         next_action = self._find_next_action(current_time)
         
         if next_action and next_action != self.current_action:
+            # Warn if we're preempting a movement action that hasn't finished yet
+            if self.is_executing and self.current_action and not self._is_action_complete():
+                if self.current_action.action_type in ["move_to", "navigate_to_scene"]:
+                    npc_name = getattr(self.npc, 'npc_id', self.npc.npc_type)
+                    print(f"[Schedule] Warning: {npc_name} still pathfinding during transition from {self.current_action.action_type} to {next_action.action_type} at {next_action.time_str}")
             # Preempt current action at scheduled time
             self._start_action(next_action)
         else:
