@@ -1,4 +1,39 @@
-"""Base scene class with automatic mask-based collision support."""
+"""Base scene class with automatic mask-based collision support.
+
+Scene Hierarchy in Tokyo Times:
+================================
+
+1. MaskedScene (base_scene.py)
+   - Base class for all world scenes
+   - Provides: mask-based collision, camera, player management, NPC spawning
+   - Can load configuration from JSON (data/rooms/{scene_name}.json)
+   - For custom scenes: subclass and define SCENE_NAME, BACKGROUND_PATH, etc.
+
+2. GenericScene (generic_scene.py)
+   - Recommended for most world scenes
+   - Data-driven: reads JSON configuration automatically
+   - No Python subclass needed - just create JSON file in data/rooms/
+   - Automatically registered via scene_registry.py
+
+3. Special Scenes
+   - TitleScene, InventoryScene, PauseScene, DialogScene, etc.
+   - Don't inherit from MaskedScene
+   - Handle UI, menus, and overlays
+   - Registered manually or use special types
+
+Scene Configuration via JSON:
+=============================
+
+Create data/rooms/{scene_name}.json with:
+  {
+    "scene_name": "cat_cafe",
+    "background": "backgrounds/cat_cafe.jpg",
+    "scale": 1.0,
+    "portals": [...]
+  }
+
+Then use: scene = GenericScene(game, scene_name="cat_cafe")
+"""
 import pygame
 import random
 import json
@@ -8,7 +43,6 @@ from entities.player import Player
 from entities.npc import NPC
 from world.camera import Camera
 from world.mask_collision import MaskCollisionSystem
-from world.world_props import get_props_for_scene
 from world.world_npcs import get_npcs_for_scene
 from entities.prop_registry import make_prop
 from world.scene_graph import register_scene_portals

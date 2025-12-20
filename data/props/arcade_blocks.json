@@ -1,0 +1,11 @@
+{
+  "prop_id": "arcade_blocks",
+  "sprite_key": "prop_arcade_blocks",
+  "variants": 1,
+  "default_variant": 0,
+  "scale": 1.0,
+  "initial_scene": "cat_cafe",
+  "x": 740,
+  "y": 350,
+  "is_item": false
+}

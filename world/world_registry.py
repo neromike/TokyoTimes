@@ -7,6 +7,8 @@ Scenes only contain references to which objects are currently present.
 from typing import Dict, List, Optional, Tuple
 from entities.npc import NPC
 from entities.interactables import Prop
+from pathlib import Path
+import json
 
 # Global world state
 _npcs: Dict[str, NPC] = {}  # npc_id -> NPC instance
@@ -41,27 +43,36 @@ def initialize_world(game) -> None:
         _npcs[npc_id] = npc
         _npc_locations[npc_id] = npc_def['initial_scene']
     
-    # Create all props
-    from world.world_props import PROPS_DEFINITION
-    for prop_id, prop_def in PROPS_DEFINITION.items():
-        prop = Prop(
-            x=prop_def['x'],
-            y=prop_def['y'],
-            game=game,
-            sprite_path=prop_def.get('sprite_path', ''),
-            mask_path=prop_def.get('mask_path', None),
-            name=prop_id,
-            variants=prop_def.get('variants', 1),
-            variant_index=prop_def.get('variant_index', 0),
-            scale=prop_def.get('scale', 1.0),
-            is_item=prop_def.get('is_item', False),
-            item_data=prop_def.get('item_data', None),
-        )
-        # Ensure item_id exists so pickups can be tracked consistently
-        prop.item_id = prop_def.get('item_id', prop_id)
-        prop.prop_id = prop_id
-        _props[prop_id] = prop
-        _prop_locations[prop_id] = prop_def['initial_scene']
+    # Create all props from data/props/*.json
+    try:
+        from entities.prop_registry import make_prop
+        props_path = Path("data/props")
+        if props_path.exists():
+            for json_file in props_path.glob("*.json"):
+                with open(json_file, "r") as f:
+                    prop_def = json.load(f)
+                prop_id = prop_def.get("prop_id") or json_file.stem
+                x = prop_def.get("x", 0)
+                y = prop_def.get("y", 0)
+                variant_index = prop_def.get("variant_index", prop_def.get("default_variant", 0))
+                base_scale = prop_def.get("scale", None)
+                prop = make_prop(
+                    prop_id,
+                    x,
+                    y,
+                    game,
+                    variant_index=variant_index,
+                    scale=base_scale,
+                    item_id=prop_def.get("item_id", prop_id),
+                    scene_scale=1.0,
+                )
+                prop.prop_id = prop_id
+                _props[prop_id] = prop
+                init_scene = prop_def.get("initial_scene")
+                if init_scene:
+                    _prop_locations[prop_id] = init_scene
+    except Exception as e:
+        print(f"[WorldRegistry] Failed to initialize props from data/props: {e}")
 
 
 def get_npc(npc_id: str) -> Optional[NPC]:

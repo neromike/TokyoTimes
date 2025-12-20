@@ -1,0 +1,16 @@
+{
+  "prop_id": "cat_food_dish",
+  "sprite_key": "prop_cat_food_dish",
+  "variants": 3,
+  "default_variant": 0,
+  "scale": 2.0,
+  "initial_scene": "cat_cafe",
+  "x": 980,
+  "y": 670,
+  "is_item": true,
+  "item_data": {
+    "name": "cat_food_dish",
+    "description": "A dish of cat food",
+    "type": "food"
+  }
+}

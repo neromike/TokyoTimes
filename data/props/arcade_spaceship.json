@@ -1,0 +1,11 @@
+{
+  "prop_id": "arcade_spaceship",
+  "sprite_key": "prop_arcade_spaceship",
+  "variants": 1,
+  "default_variant": 0,
+  "scale": 1.0,
+  "initial_scene": "cat_cafe",
+  "x": 600,
+  "y": 350,
+  "is_item": false
+}
